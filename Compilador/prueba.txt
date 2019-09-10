@@ -1,0 +1,10 @@
+VAR
+[INT,STRING]:[a,"hola3"]
+[FLOAT,INT]:[b,var1]
+ENDVAR
+
+--/ESTO ES UN COMENTARIO --/comentario dentro de otro/-- /--
+
+a:=3;
+
+b:=FILTER(_>3 AND _<1,[a,b]);

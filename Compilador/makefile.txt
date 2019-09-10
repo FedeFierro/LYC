@@ -1,0 +1,9 @@
+DEJO LOS COMANDOS EN CMD QUE DICE EL APUNTE PARA INTEGRAR TODO
+
+flex lexico.l
+
+bison -dyv sintactico.y
+
+gcc.exe lex.yy.c y.tab.c -lfl -o primera.exe
+
+primera.exe prueba.txt
