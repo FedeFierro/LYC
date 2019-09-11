@@ -34,7 +34,7 @@ ID						{LETRA}({LETRA}|{DIGITO}|_)*
 REAL					(\-)?({DIGITO}*"."{DIGITO}+|{DIGITO}+".")
 ENTERO					(\-)?{DIGITO}+
 CADENA					\"[^"\n]*\"
-
+DEFAULT					(.)
 %%
 
 {COMENTARIOS}				{}
@@ -114,8 +114,8 @@ CADENA					\"[^"\n]*\"
 							return CADENA;
 						}
 
-.    					{
-							sprintf(mensajeDeError, "Caracter inválido: %s", yytext);
+{DEFAULT}				{
+							sprintf(mensajeDeError, "Caracter invalido: %s", yytext);
 							mostrarError(mensajeDeError);
 						}
 "\n"      		
@@ -123,7 +123,6 @@ CADENA					\"[^"\n]*\"
 "\r\n"
 "\t"
 " "
-
 
 
 %%
