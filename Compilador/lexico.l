@@ -34,7 +34,8 @@ ID						{LETRA}({LETRA}|{DIGITO}|_)*
 REAL					(\-)?({DIGITO}*"."{DIGITO}+|{DIGITO}+".")
 ENTERO					(\-)?{DIGITO}+
 CADENA					\"[^"\n]*\"
-DEFAULT					(.)
+DEFAULT 				(.)
+
 %%
 
 {COMENTARIOS}				{}
@@ -50,8 +51,8 @@ DEFAULT					(.)
 "\)"						{return PARENTESIS_CERRADO;}
 ","							{return COMA;}
 ":="						{return OPERADOR_ASIGNACION;}
-"READ"						{return OPERADOR_ENTRADA;}
-"WRITE"						{return OPERADOR_SALIDA;}
+"READ"						{return READ;}
+"WRITE"						{return WRITE;}
 "IF"						{return OPERADOR_IF;}
 "ELSE"						{return ELSE;}
 "ENDIF"						{return ENDIF;}
@@ -64,7 +65,7 @@ DEFAULT					(.)
 "<="						{return OPERADOR_MENOR_O_IGUAL_A;}
 "="							{return OPERADOR_IGUAL_A;}
 "!="						{return OPERADOR_DISTINTO_A;}
-"VAR"					{return VAR;}
+"VAR"						{return VAR;}
 "ENDVAR"					{return ENDVAR;}
 ";"							{return PUNTO_Y_COMA;}
 ":"							{return DOS_PUNTOS;}
@@ -114,9 +115,12 @@ DEFAULT					(.)
 							return CADENA;
 						}
 
-{DEFAULT}				{
+{DEFAULT}			{
+							
 							sprintf(mensajeDeError, "Caracter invalido: %s", yytext);
 							mostrarError(mensajeDeError);
+							system ("Pause");
+							exit (1);
 						}
 "\n"      		
 "\r"

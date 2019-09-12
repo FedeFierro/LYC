@@ -12,10 +12,16 @@ FILE *archivoTablaDeSimbolos;
 FILE *archivoCodigoIntermedio;
 
 int cantidadTokens = 0;
-int cant_variables=0;
-int i=0;
-int max=0;
+
+int i=0; 
+int j=0;
+int cant_elementos=0;
 int min=0;
+int pos_td=0;
+int pos_cv=0;
+int cant_variables=0;
+int cant_tipo_dato=0; 
+int diferencia=0;
 
 // TABLA SIMBOLOS
 typedef struct
@@ -26,14 +32,7 @@ typedef struct
     int longitud;
 } struct_tabla_de_simbolos;
 
-typedef struct
-{
-  char tipo [11];
-  char valor [100]; 
-} struct_almacenar_id;
-
 struct_tabla_de_simbolos tablaDeSimbolos[200];
-struct_almacenar_id vectorAlmacenamiento[10];
 
 char tipoVariableActual[20];
 
@@ -43,7 +42,6 @@ char* idAux;
 
 int yylex();
 int yyerror();
-int cant_tipo_variable =0;
 
 void mostrarError(char *mensaje);
 void guardarTipo(char * tipoVariable);
@@ -55,8 +53,9 @@ void guardarCadenaEnTablaDeSimbolos(char* token);
 void guardarIDEnTablaDeSimbolos(char* token);
 void guardarRealEnTablaDeSimbolos(double token);
 char* buscarCadenaEnTablaDeSimbolos(char *valor);
-void guardarEnVectorAlmacenamiento(int opc, char * cad);
-void ignorarNodeclaradas();
+void guardarEnVectorTablaSimbolos(int opc, char * cad);
+void acomodarPunterosTS();
+void quitarDuplicados();
 
 %}
 
@@ -84,8 +83,8 @@ PARENTESIS_CERRADO
 COMA
 OPERADOR_ASIGNACION
 CADENA
-OPERADOR_ENTRADA
-OPERADOR_SALIDA
+READ
+WRITE
 OPERADOR_IF 
 ELSE
 ENDIF
@@ -114,71 +113,90 @@ GUION_BAJO
 
 start_programa : programa 
   {
-    printf("Compilacion exitosa\n");
+    printf("Compilacion exitosa\n\n");
   };
 
 programa : bloque_declaracion  bloque_programa
   {
-    printf("Programa OK\n");
+    printf("Programa OK\n\n");
   };
 
-bloque_declaracion: VAR lista_definiciones ENDVAR {ignorarNodeclaradas(); printf("bloque_definiciones OK\n");};
+bloque_declaracion: VAR lista_definiciones ENDVAR 
+				{
+				quitarDuplicados();
+				printf("bloque_definiciones OK\n\n");
+				};
 
-lista_definiciones: lista_definiciones definicion {printf("lista_definiciones definicion OK\n");} | definicion {printf("lista_definiciones->definicion OK\n");}
+lista_definiciones: lista_definiciones definicion {	printf("lista_definiciones -> definicion OK\n\n");} 
+					| definicion {	printf("lista_definiciones -> definicion OK\n\n");}
 
-definicion: CORCHETE_ABIERTO lista_tipo_dato CORCHETE_CERRADO DOS_PUNTOS CORCHETE_ABIERTO lista_ids CORCHETE_CERRADO {printf("definicion OK\n");};
+definicion: CORCHETE_ABIERTO lista_tipo_dato CORCHETE_CERRADO DOS_PUNTOS CORCHETE_ABIERTO lista_ids CORCHETE_CERRADO {	acomodarPunterosTS(); printf("definicion OK\n\n");};
+
+lista_tipo_dato: lista_tipo_dato COMA tipo_dato {printf("lista_tipo_dato -> lista_tipo_dato , tipo_dato OK\n\n");} 
+					
+					| tipo_dato {printf("lista_tipo_dato -> tipo_dato OK \n\n");}
 
 tipo_dato: 
   TIPO_ENTERO       
     {
       guardarTipo("ENTERO");
-      guardarEnVectorAlmacenamiento(1,tipoVariableActual);
+      guardarEnVectorTablaSimbolos(1,tipoVariableActual);
       printf("TIPO_ENTERO en tipo_variable OK\n");
     }
   | TIPO_REAL 
     {
       guardarTipo("REAL");
-      guardarEnVectorAlmacenamiento(1,tipoVariableActual);
+      guardarEnVectorTablaSimbolos(1,tipoVariableActual);
       printf("TIPO_REAL en tipo_variable OK\n");
     }
   | TIPO_CADENA
     {
       guardarTipo("CADENA");
-      guardarEnVectorAlmacenamiento(1,tipoVariableActual);
+      guardarEnVectorTablaSimbolos(1,tipoVariableActual);
       printf("TIPO_CADENA en tipo_variable OK\n");
     }
 
-lista_tipo_dato: lista_tipo_dato COMA tipo_dato | tipo_dato
+
 
 lista_ids: 
   lista_ids COMA ID 
     {
       printf("%s\n", yylval.str_val);
-      guardarEnVectorAlmacenamiento(2,yylval.str_val);
-      //guardarIDEnTablaDeSimbolos(yylval.str_val);
-      printf("ID en lista_ids OK\n");
+      guardarEnVectorTablaSimbolos(2,yylval.str_val);
+      printf("lista_ids -> lista_ids , ID OK\n\n");
     }
   | ID
     {
       printf("%s\n", yylval.str_val);
-      //guardarIDEnTablaDeSimbolos(yylval.str_val);
-      guardarEnVectorAlmacenamiento(2,yylval.str_val);
-      printf("ID en lista_ids OK\n");
+      guardarEnVectorTablaSimbolos(2,yylval.str_val);
+      printf("lista_ids -> ID OK\n\n");
     }
 
-	| lista_ids COMA CADENA{guardarEnVectorAlmacenamiento(2,yylval.str_val); printf("lista_ids -> lista_ids COMA UNA CADENA\n , cadena: %s\n", yylval.str_val);}
 	
-	| CADENA{guardarEnVectorAlmacenamiento(2,yylval.str_val);	printf("reconoci una cadena: %s\n", yylval.str_val);}
-	
-bloque_programa : bloque_programa sentencia | sentencia
+bloque_programa : bloque_programa sentencia {printf("bloque_programa -> bloque_programa sentencia OK \n\n");}| sentencia {printf("bloque_programa -> sentencia OK \n\n");}
 
-sentencia: asignacion | bloque_condicional | asignacion_multiple
+sentencia: 			asignacion 	{printf("sentencia -> asignacion OK \n\n");}
+					| bloque_condicional	{printf("sentencia -> bloque_condicional OK \n\n");} 
+					| asignacion_multiple 	{printf("sentencia -> asignacion_multiple OK \n\n");}
+					| bloque_iteracion 		{printf("sentencia -> bloque_iteracion OK \n\n");}
+					| entrada_datos			{printf("sentencia -> entrada_datos OK \n\n");}
+					| salida_datos			{printf("sentencia -> salida_datos OK \n\n");}
+					
+entrada_datos: READ ID	{printf("READ ID OK \n\n");}
 
-asignacion: ID OPERADOR_ASIGNACION expresion PUNTO_Y_COMA
+salida_datos: WRITE CADENA {printf("WRITE CADENA OK \n\n");}
 
-expresion:  expresion OPERACION_SUMA termino | expresion OPERACION_RESTA termino | termino
+bloque_iteracion: REPEAT bloque_programa UNTIL condicion {printf("bloque REPEAT-UNTIL\n\n");}
 
-termino: termino OPERACION_MULTIPLICACION factor | termino OPERACION_DIVISION factor | factor
+asignacion: ID OPERADOR_ASIGNACION expresion PUNTO_Y_COMA	{printf("asignacion OK\n\n");}
+
+expresion:  expresion OPERACION_SUMA termino	{printf("expresion -> exp + term OK \n\n");} 
+			| expresion OPERACION_RESTA termino 	{printf("expresion -> exp - term OK \n\n");}
+			| termino							{printf("expresion -> term OK \n\n");}
+
+termino: termino OPERACION_MULTIPLICACION factor {printf("term -> term * factor OK \n\n");} 
+				| termino OPERACION_DIVISION factor 	{printf("term -> term / factor OK \n\n");}
+				| factor			{printf("term -> factor OK \n\n");}
 
 factor: ID
 		|ENTERO
@@ -211,7 +229,7 @@ comparacion : expresion OPERADOR_MAYOR_A expresion
 			
 			|expresion OPERADOR_DISTINTO_A expresion
 			
-filtro: FILTER PARENTESIS_ABIERTO condicion_filter COMA  CORCHETE_ABIERTO lista_ids CORCHETE_CERRADO PARENTESIS_CERRADO {printf("hay un filter\n");}
+filtro: FILTER PARENTESIS_ABIERTO condicion_filter COMA  CORCHETE_ABIERTO lista_ids CORCHETE_CERRADO PARENTESIS_CERRADO {printf("FILTER OK\n\n");}
 
 condicion_filter: comparacion_filter OPERADOR_AND comparacion_filter 
 				
@@ -256,8 +274,9 @@ int main(int argc,char *argv[])
       
       yyparse();
       
-	  for(i=0;i<min;i++){
-	  printf("tipo: %s, valor: %s\n",vectorAlmacenamiento[i].tipo,vectorAlmacenamiento[i].valor);
+	  for(i=0;i<cantidadTokens;i++){
+	  printf("----- TABLA DE SIMBOLOS -----\n");
+	  printf("tipo: %s, nombre: %s\n",tablaDeSimbolos[i].tipo,tablaDeSimbolos[i].nombre);
 	  }
   }
   fclose(yyin);
@@ -277,14 +296,17 @@ int yyerror(void)
     exit (1);
  }
 
-void guardarEnVectorAlmacenamiento(int opc, char * cad){
+void guardarEnVectorTablaSimbolos(int opc, char * cad){
+    
   if(opc==1){
-    strcpy(vectorAlmacenamiento[cant_tipo_variable].tipo,cad);
-    cant_tipo_variable++;
+    strcpy(tablaDeSimbolos[pos_td].tipo,cad);
+    cant_tipo_dato++;
+	pos_td++;
   }else
   
-  {      strcpy(vectorAlmacenamiento[cant_variables].valor,cad);
-        cant_variables++;
+  {      strcpy(tablaDeSimbolos[pos_cv].nombre,cad);
+        pos_cv++;
+		cant_variables++;
   }
 
 }
@@ -293,24 +315,84 @@ void guardarTipo(char * tipoVariable) {
   strcpy(tipoVariableActual, tipoVariable);
 }
 
-void ignorarNodeclaradas()			// en min me quedan el numero maximo de variables declaradas
-{		
 
-		if(cant_tipo_variable>cant_variables)
-		{max=cant_tipo_variable;
-		min=cant_variables;}
-		else
-		{max=cant_variables;
-		min=cant_tipo_variable;}
-		
-	for(i=0;i<max;i++)
+void acomodarPunterosTS()
+{
+	int indice=0;
+	
+	if(cant_tipo_dato!=cant_variables)
 	{
-		if(strcmp(vectorAlmacenamiento[i].tipo,"")==0 || strcmp(vectorAlmacenamiento[i].valor,"")== 0)
+		if(pos_td<pos_cv)
+		{	
+			min=pos_td;
+			cant_elementos=min;
+			pos_td=pos_cv=min;
+			diferencia=(cant_variables-cant_tipo_dato);
+			indice=min;
+			while(diferencia>0)
+			{
+			strcpy(tablaDeSimbolos[indice].tipo, "");
+			strcpy(tablaDeSimbolos[indice].nombre, "");
+			diferencia--;
+			indice++;
+			}
+			
+		}
+		else
 		{
-		strcpy(vectorAlmacenamiento[i].tipo, "");
-		strcpy(vectorAlmacenamiento[i].valor, "");
-		 
+			min=pos_cv;
+			cant_elementos=min;
+			pos_td=pos_cv=min;
+			diferencia=(cant_tipo_dato-cant_variables);
+			indice=min;
+			while(diferencia>0)
+			{
+			strcpy(tablaDeSimbolos[indice].tipo, "");
+			strcpy(tablaDeSimbolos[indice].nombre, "");
+			diferencia--;
+			indice++;
+			}
+			}
+	}else
+	
+	cant_elementos=pos_cv;
+	
+	cant_tipo_dato=cant_variables=0;
+
+}
+
+void quitarDuplicados()
+{
+	for(i=0;i<cant_elementos;i++)
+	{
+		if(strcmp(tablaDeSimbolos[i].nombre,"x")!=0)
+		{
+		cantidadTokens++;
+		
+		for(j=i+1;j<cant_elementos;j++)
+		{
+				if(strcmp(tablaDeSimbolos[i].tipo,tablaDeSimbolos[j].tipo)==0 && strcmp(tablaDeSimbolos[i].nombre,tablaDeSimbolos[j].nombre)==0)
+				{
+				strcpy(tablaDeSimbolos[j].tipo, "x");
+				strcpy(tablaDeSimbolos[j].nombre, "x");
+			
+				}
+		
+		}
+		
+		}else
+		
+		{j=i+1;
+		while(j<cant_elementos && strcmp(tablaDeSimbolos[j].tipo,"x")==0)
+		j++;
+		if(j<cant_elementos)
+		{
+		strcpy(tablaDeSimbolos[i].nombre,tablaDeSimbolos[j].nombre);
+		strcpy(tablaDeSimbolos[i].tipo,tablaDeSimbolos[j].tipo);
+		}
+		else
+		i=cant_elementos;
+		
 		}
 	}
-
 }
