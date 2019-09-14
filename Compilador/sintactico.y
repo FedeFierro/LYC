@@ -11,6 +11,15 @@ char *yytext;
 FILE *archivoTablaDeSimbolos;
 FILE *archivoCodigoIntermedio;
 
+/* --------------- CONSTANTES --------------- */
+#define TAM_NOMBRE 32	/* Limite tamanio nombre (sumar 1 para _ ) */
+
+/* --------------- PROTOTIPO DE FUNCIONES PRIMERA ENTREGA --------------- */
+void guardarTabla(void);
+void agregarEntero(int);
+void agregarReal(char*);
+void agregarCadena(char*);
+
 int cantidadTokens = 0;
 
 int i=0; 
@@ -250,6 +259,7 @@ int main(int argc,char *argv[]){
 			printf("----- TABLA DE SIMBOLOS -----\n");
 			printf("tipo: %s, nombre: %s\n",tablaDeSimbolos[i].tipo,tablaDeSimbolos[i].nombre);
 		}
+		guardarTabla();
 	}
 	fclose(yyin);
 	return 0;
@@ -342,3 +352,129 @@ void quitarDuplicados(){
 		}
 	}
 }
+
+
+/* Guarda la tabla generada en un txt */
+void guardarTabla(){
+
+	// Verifico si se cargo algo en la tabla
+	if(cantidadTokens == -1)
+		yyerror();
+
+	FILE* arch = fopen("ts.txt", "w+");
+	if(!arch){
+		printf("No pude crear el archivo ts.txt\n");
+		return;
+	}
+
+	fprintf(arch,"%-35s%-20s%-35s%-5s\n","NOMBRE","TIPO","VALOR", "LONGITUD");
+	fprintf(arch, "======================================================================================================\n");
+
+	// Recorro la tabla
+	int i = 0;
+	while (i < cantidadTokens) {
+
+
+		fprintf(arch, "%-35s%-20s%-35s%-5s\n", &(tablaDeSimbolos[i].nombre), &(tablaDeSimbolos[i].tipo) , "-", "-");
+
+		
+		i++;
+	}
+
+	fclose(arch);
+}
+
+
+
+
+/* Agregar cadena a la tabla de simbolos */
+void agregarCadena(char* nombre) {
+
+	
+
+	// Formateo la cadena
+	int length = strlen(nombre);
+	char nombre_nuevo[length];
+	strcpy(nombre_nuevo, "_");
+	strcat(nombre_nuevo, nombre + 1);
+	strcpy(nombre_nuevo + strlen(nombre_nuevo) - 1, "\0");
+
+	// Verificamos si ya esta cargada
+	//if (buscarCte(nombre_nuevo, CteString) == -1) {
+
+		// Avanzo a siguiente lugar en la tabla
+		cantidadTokens++;
+
+		// Agrego nombre a la tabla
+		strcpy(tablaDeSimbolos[cantidadTokens].nombre, nombre_nuevo);
+
+		// Agrego el tipo (Se utiliza para imprimir tabla)
+		strcpy(tablaDeSimbolos[cantidadTokens].tipo,"CADENA");	
+
+		// Agrego valor
+		strcpy(tablaDeSimbolos[cantidadTokens].valor, nombre_nuevo + 1);		// Omito el _
+
+		// Agrego la longitud
+		tablaDeSimbolos[cantidadTokens].longitud = strlen(nombre_nuevo) - 1;
+	//}
+}
+
+/* Agregar entero a la tabla de simbolos */
+void agregarEntero(int valor) {
+
+	
+
+	// Agrego _ al nombre
+	char nombre_nuevo[TAM_NOMBRE];
+	sprintf(nombre_nuevo, "_%d", valor);
+
+	// Verificamos si ya esta cargada
+	//if (buscarCte(nombre_nuevo, CteInt) == -1) {
+
+		// Avanzo una posicion en la tabla
+		cantidadTokens++;
+
+		// Agrego nombre a la tabla
+		strcpy(tablaDeSimbolos[cantidadTokens].nombre, nombre_nuevo);
+
+		// Agrego el tipo (Se utiliza para imprimir tabla)
+		//tablaDeSimbolos[cantidadTokens].tipo = '';	
+		strcpy(tablaDeSimbolos[cantidadTokens].tipo,"ENTERO");	
+
+		// Agrego el valor
+		//tablaDeSimbolos[cantidadTokens].valor = valor;
+		
+		sprintf(tablaDeSimbolos[cantidadTokens].valor, "%d", valor);
+		
+	//}
+}
+
+/* Agregar real a la tabla de simbolos */
+void agregarReal(char* valor) {
+
+	
+
+	// Agrego _ al nombre
+	char nombre_nuevo[TAM_NOMBRE];
+	sprintf(nombre_nuevo, "_%f", atof(valor));
+
+	// Verificamos si ya esta cargada
+	//if (buscarCte(nombre_nuevo, CteFloat) == -1) {
+
+		// Avanzo una posicion en la tabla
+		cantidadTokens++;
+
+		// Agrego nombre a la tabla
+		strcpy(tablaDeSimbolos[cantidadTokens].nombre, nombre_nuevo);
+
+		// Agrego el tipo (Se utiliza para imprimir tabla)
+		//tablaDeSimbolos[cantidadTokens].tipo = '';	
+		strcpy(tablaDeSimbolos[cantidadTokens].tipo,"REAL");
+
+		// Agrego el valor
+		//tablaDeSimbolos[cantidadTokens].valor = atof(valor);
+		sprintf(tablaDeSimbolos[cantidadTokens].valor, "%f", atof(valor));
+		
+	//}
+}
+
