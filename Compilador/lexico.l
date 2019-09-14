@@ -54,8 +54,8 @@ DEFAULT 				(.)
 "READ"						{return READ;}
 "WRITE"						{return WRITE;}
 "IF"						{return OPERADOR_IF;}
-"ELSE"						{return ELSE;}
-"ENDIF"						{return ENDIF;}
+"ELSE"						{return OPERADOR_ELSE;}
+"ENDIF"						{return OPERADOR_ENDIF;}
 "AND"						{return OPERADOR_AND;}
 "OR"						{return OPERADOR_OR;}
 "NOT"						{return OPERADOR_NOT;}
@@ -114,48 +114,50 @@ DEFAULT 				(.)
 							yylval.str_val=auxS; 
 							return CADENA;
 						}
-
-{DEFAULT}			{
-							
-							sprintf(mensajeDeError, "Caracter invalido: %s", yytext);
-							mostrarError(mensajeDeError);
-							system ("Pause");
-							exit (1);
-						}
 "\n"      		
 "\r"
 "\r\n"
 "\t"
 " "
+{DEFAULT}			{
+							sprintf(mensajeDeError, "Caracter invalido: %s", yytext);
+							mostrarError(mensajeDeError);
+							system ("Pause");
+							exit (1);
+						}
 
 
 %%
 
 int validarLongitudId(){
-	if(strlen(yytext) <= LIMITE_ID)
+	if(strlen(yytext) <= LIMITE_ID){
 		return 1;
+	}
 	return 0;
 }
 
 int validarLongitudReal(){
 	int real;
 	sscanf(yytext,"%lf",&real);
-	if(real >= -LIMITE_REAL && real <= LIMITE_REAL-1)
+	if(real >= -LIMITE_REAL && real <= LIMITE_REAL-1){
 		return 1;
+	}
 	return 0;
 }
 
 int validarLongitudEntero(){
 	int entero;
 	sscanf(yytext,"%d",&entero);
-	if(entero >= -LIMITE_ENTERO && entero <= LIMITE_ENTERO-1)
+	if(entero >= -LIMITE_ENTERO && entero <= LIMITE_ENTERO-1){
 		return 1;
+	}
 	return 0;
 }
 
 int validarLongitudCadena(){
-	if((strlen(yytext) - 2) <= LIMITE_CADENA) 
+	if((strlen(yytext) - 2) <= LIMITE_CADENA){
 		return 1;
+	}
 	return 0;
 }
 
@@ -166,5 +168,4 @@ void quitarComillas() {
 		i++;
 	}
 	auxS[i] = '\0';
-	
 }

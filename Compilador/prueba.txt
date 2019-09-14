@@ -1,9 +1,9 @@
 VAR
-[INT,STRING]:[a,"hola3"]
+[INT,STRING]:[a,berta]
 [FLOAT,INT]:[b,var1]
 ENDVAR
 
---/ESTO ES UN COMENTARIO --/comentario dentro de otro/-- /--
 
-a:=3;
-b:=FILTER(_>3 AND _<1,[a,b]);
+a:= FILTER( NOT  _<b , [a,b,c,d,e] );
+
+[a,b,c,d]:=[10.4,cont, 5+4, 7/8 ]
