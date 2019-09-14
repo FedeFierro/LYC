@@ -31,8 +31,8 @@ LETRA					[a-zA-Z]
 COMENTARIOS				\-\-\/([^"\/\-"|"\-\/"]|\n)*\/\-\-
 COMENTARIOS_ANIDADOS	\-\-\/([^"\/\-"|"\-\/"]|\n)*{COMENTARIOS}*([^"\/\-"|"\-\/"]|\n)*\/\-\-
 ID						{LETRA}({LETRA}|{DIGITO}|_)*
-REAL					(\-)?({DIGITO}*"."{DIGITO}+|{DIGITO}+".")
-ENTERO					(\-)?{DIGITO}+
+REAL					({DIGITO}*"."{DIGITO}+|{DIGITO}+".")
+ENTERO					{DIGITO}+
 CADENA					\"[^"\n]*\"
 DEFAULT 				(.)
 

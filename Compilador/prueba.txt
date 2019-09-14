@@ -5,5 +5,19 @@ ENDVAR
 
 
 a:= FILTER( NOT  _<b , [a,b,c,d,e] );
+--/Comentario --/joaal/--/--
+REPEAT
+	a:=c;
+	IF(a<b OR 65+12 = c)
+		a:="Hola";
+	ELSE
+		a:="pepe";
+	ENDIF
+UNTIL (a < 4)
 
-[a,b,c,d]:=[10.4,cont, 5+4, 7/8 ]
+IF(NOTa>=c)
+	[a,b,c,d]:=[10.4,cont, 5+4, 7/8 ]
+ENDIF
+b:= 33/6 -2;
+ a:=FILTER( _=33*4 AND _ >= 33/6 -2,  [a,pepp, jdf]);
+ 

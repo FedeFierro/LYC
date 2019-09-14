@@ -178,11 +178,11 @@ termino: termino OPERACION_MULTIPLICACION factor {printf("term -> term * factor 
 		| factor			{printf("term -> factor OK \n\n");}
 
 factor: ID
-		|ENTERO
+		| ENTERO
 		| REAL
 		| CADENA
-		|PARENTESIS_ABIERTO expresion PARENTESIS_CERRADO
-		|filtro
+		| PARENTESIS_ABIERTO expresion PARENTESIS_CERRADO
+		| filtro
 		
 bloque_condicional: bloque_if {printf("bloque_condicional\n");}
 
@@ -215,12 +215,7 @@ comparacion_filter : GUION_BAJO OPERADOR_MAYOR_A expresion_numerica
 					| GUION_BAJO OPERADOR_MENOR_O_IGUAL_A expresion_numerica
 					| GUION_BAJO OPERADOR_IGUAL_A expresion_numerica
 					| GUION_BAJO OPERADOR_DISTINTO_A expresion_numerica
-					| expresion_numerica OPERADOR_MAYOR_A GUION_BAJO	
-					| expresion_numerica OPERADOR_MENOR_A GUION_BAJO
-					| expresion_numerica OPERADOR_MAYOR_O_IGUAL_A GUION_BAJO
-					| expresion_numerica OPERADOR_MENOR_O_IGUAL_A GUION_BAJO
-					| expresion_numerica OPERADOR_IGUAL_A GUION_BAJO
-					| expresion_numerica OPERADOR_DISTINTO_A GUION_BAJO
+
 				
 asignacion_multiple: CORCHETE_ABIERTO lista_ids CORCHETE_CERRADO OPERADOR_ASIGNACION CORCHETE_ABIERTO lista_expresiones CORCHETE_CERRADO 
 		{printf("hay una asignacion multiple\n");}
@@ -238,10 +233,10 @@ termino_numerico: termino_numerico OPERACION_MULTIPLICACION factor_numerico {pri
 		| factor_numerico			{printf("term -> factor_numerico OK \n\n");}
 
 factor_numerico: ID
-		|ENTERO
+		| ENTERO
 		| REAL
-		|PARENTESIS_ABIERTO expresion_numerica PARENTESIS_CERRADO
-		|filtro
+		| PARENTESIS_ABIERTO expresion_numerica PARENTESIS_CERRADO
+		| filtro
 
 
 %%
