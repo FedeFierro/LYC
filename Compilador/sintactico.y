@@ -12,13 +12,15 @@ FILE *archivoTablaDeSimbolos;
 FILE *archivoCodigoIntermedio;
 
 /* --------------- CONSTANTES --------------- */
-#define TAM_NOMBRE 32	/* Limite tamanio nombre (sumar 1 para _ ) */
+#define TAM_NOMBRE 32	/* Limite tamaño nombre (sumar 1 para _ ) */
+#define CteString "CTE_STRING"
 
 /* --------------- PROTOTIPO DE FUNCIONES PRIMERA ENTREGA --------------- */
 void guardarTabla(void);
 void agregarEntero(int);
 void agregarReal(char*);
 void agregarCadena(char*);
+int buscarCte(char* , char*);
 
 int cantidadTokens = 0;
 
@@ -31,6 +33,7 @@ int pos_cv=0;
 int cant_variables=0;
 int cant_tipo_dato=0; 
 int diferencia=0;
+int cant_ctes=0;
 
 // TABLA SIMBOLOS
 typedef struct
@@ -119,9 +122,12 @@ programa : bloque_declaracion  bloque_programa
 		{ printf("Programa OK\n\n"); };
 
 bloque_declaracion: VAR lista_definiciones ENDVAR 
-		{ quitarDuplicados(); printf("bloque_definiciones OK\n\n"); };
+		{ quitarDuplicados(); 
+		printf("bloque_definiciones OK\n\n");
+		cant_ctes=cantidadTokens;	
+		};
 
-lista_definiciones: lista_definiciones definicion {	printf("lista_definiciones -> definicion OK\n\n");} 
+lista_definiciones: lista_definiciones definicion {	printf("lista_definiciones -> lista_definiciones definicion OK\n\n");} 
 					| definicion {	printf("lista_definiciones -> definicion OK\n\n");}
 
 definicion: CORCHETE_ABIERTO lista_tipo_dato CORCHETE_CERRADO DOS_PUNTOS CORCHETE_ABIERTO lista_ids CORCHETE_CERRADO 
@@ -189,7 +195,7 @@ termino: termino OPERACION_MULTIPLICACION factor {printf("term -> term * factor 
 factor: ID
 		| ENTERO
 		| REAL
-		| CADENA
+		| CADENA	{agregarCadena(yylval.str_val);}
 		| PARENTESIS_ABIERTO expresion PARENTESIS_CERRADO
 		| filtro
 		
@@ -227,7 +233,7 @@ comparacion_filter : GUION_BAJO OPERADOR_MAYOR_A expresion_numerica
 
 				
 asignacion_multiple: CORCHETE_ABIERTO lista_ids CORCHETE_CERRADO OPERADOR_ASIGNACION CORCHETE_ABIERTO lista_expresiones CORCHETE_CERRADO 
-		{printf("hay una asignacion multiple\n");}
+		{printf("hay una asignacion multiple OK \n\n");}
  
 lista_expresiones : lista_expresiones COMA expresion_numerica
 				| expresion_numerica
@@ -255,9 +261,10 @@ int main(int argc,char *argv[]){
 		printf("\nNo se puede abrir el archivo: %s\n", argv[1]);
 	}else {
 		yyparse();
-		for(i=0;i<cantidadTokens;i++){
-			printf("----- TABLA DE SIMBOLOS -----\n");
-			printf("tipo: %s, nombre: %s\n",tablaDeSimbolos[i].tipo,tablaDeSimbolos[i].nombre);
+		printf("----- TABLA DE SIMBOLOS -----\n");
+		for(i=0;i<cant_ctes;i++){
+			
+			printf("tipo: %s, nombre: %s\n, valor: %s, longitud: %d",tablaDeSimbolos[i].tipo,tablaDeSimbolos[i].nombre,tablaDeSimbolos[i].valor,tablaDeSimbolos[i].longitud);
 		}
 		guardarTabla();
 	}
@@ -329,18 +336,18 @@ void acomodarPunterosTS(){
 
 void quitarDuplicados(){
 	for(i=0;i<cant_elementos;i++){
-		if(strcmp(tablaDeSimbolos[i].nombre,"x")!=0){
+		if(strcmp(tablaDeSimbolos[i].nombre,"@")!=0){
 			cantidadTokens++;
 			for(j=i+1;j<cant_elementos;j++){
 				if(strcmp(tablaDeSimbolos[i].tipo,tablaDeSimbolos[j].tipo)==0 
 						&& strcmp(tablaDeSimbolos[i].nombre,tablaDeSimbolos[j].nombre)==0){
-					strcpy(tablaDeSimbolos[j].tipo, "x");
-					strcpy(tablaDeSimbolos[j].nombre, "x");
+					strcpy(tablaDeSimbolos[j].tipo, "@");
+					strcpy(tablaDeSimbolos[j].nombre, "@");
 				}
 			}
 		}else{
 			j=i+1;
-			while(j<cant_elementos && strcmp(tablaDeSimbolos[j].tipo,"x")==0){
+			while(j<cant_elementos && strcmp(tablaDeSimbolos[j].tipo,"@")==0){
 				j++;
 				if(j<cant_elementos){
 					strcpy(tablaDeSimbolos[i].nombre,tablaDeSimbolos[j].nombre);
@@ -367,17 +374,14 @@ void guardarTabla(){
 		return;
 	}
 
-	fprintf(arch,"%-35s%-20s%-35s%-5s\n","NOMBRE","TIPO","VALOR", "LONGITUD");
+	fprintf(arch,"%-30s%-20s%-30s%-5s\n","NOMBRE","TIPO","VALOR", "LONGITUD");
 	fprintf(arch, "======================================================================================================\n");
 
 	// Recorro la tabla
 	int i = 0;
-	while (i < cantidadTokens) {
+	while (i < cant_ctes) {
 
-
-		fprintf(arch, "%-35s%-20s%-35s%-5s\n", &(tablaDeSimbolos[i].nombre), &(tablaDeSimbolos[i].tipo) , "-", "-");
-
-		
+		fprintf(arch, "%-30s%-20s%-30s%-5d\n", &(tablaDeSimbolos[i].nombre), &(tablaDeSimbolos[i].tipo) , &(tablaDeSimbolos[i].valor), tablaDeSimbolos[i].longitud);
 		i++;
 	}
 
@@ -386,43 +390,43 @@ void guardarTabla(){
 
 
 
-
 /* Agregar cadena a la tabla de simbolos */
 void agregarCadena(char* nombre) {
 
-	
-
 	// Formateo la cadena
 	int length = strlen(nombre);
+	printf("LONGITUD: %d\n",length);
+	printf("CADENA QUE MANDE: %s\n", nombre);
 	char nombre_nuevo[length];
 	strcpy(nombre_nuevo, "_");
-	strcat(nombre_nuevo, nombre + 1);
-	strcpy(nombre_nuevo + strlen(nombre_nuevo) - 1, "\0");
+	strcat(nombre_nuevo, nombre);
+	printf("nombre_nuevo + nombre: %s\n", nombre_nuevo);
+	strcpy(nombre_nuevo + strlen(nombre_nuevo), "\0");
+	printf("nombre_nuevo: %s\n", nombre_nuevo);
 
 	// Verificamos si ya esta cargada
-	//if (buscarCte(nombre_nuevo, CteString) == -1) {
-
-		// Avanzo a siguiente lugar en la tabla
-		cantidadTokens++;
+	if (buscarCte(nombre_nuevo, CteString) == 0) {
 
 		// Agrego nombre a la tabla
-		strcpy(tablaDeSimbolos[cantidadTokens].nombre, nombre_nuevo);
+		strcpy(tablaDeSimbolos[cant_ctes].nombre, nombre_nuevo);
 
 		// Agrego el tipo (Se utiliza para imprimir tabla)
-		strcpy(tablaDeSimbolos[cantidadTokens].tipo,"CADENA");	
+		strcpy(tablaDeSimbolos[cant_ctes].tipo, CteString);	
 
 		// Agrego valor
-		strcpy(tablaDeSimbolos[cantidadTokens].valor, nombre_nuevo + 1);		// Omito el _
+		strcpy(tablaDeSimbolos[cant_ctes].valor, nombre_nuevo+1);		// Omito el _
 
 		// Agrego la longitud
-		tablaDeSimbolos[cantidadTokens].longitud = strlen(nombre_nuevo) - 1;
-	//}
+		tablaDeSimbolos[cant_ctes].longitud = length;
+		
+		cant_ctes++;
+		
+		printf("AGREGO A LA TABLA: %s\n", nombre_nuevo);
+	}
 }
 
 /* Agregar entero a la tabla de simbolos */
 void agregarEntero(int valor) {
-
-	
 
 	// Agrego _ al nombre
 	char nombre_nuevo[TAM_NOMBRE];
@@ -452,8 +456,6 @@ void agregarEntero(int valor) {
 /* Agregar real a la tabla de simbolos */
 void agregarReal(char* valor) {
 
-	
-
 	// Agrego _ al nombre
 	char nombre_nuevo[TAM_NOMBRE];
 	sprintf(nombre_nuevo, "_%f", atof(valor));
@@ -478,3 +480,14 @@ void agregarReal(char* valor) {
 	//}
 }
 
+int buscarCte(char* cad1, char* cad2){			//return 1 = ya esta, return 0 = no esta
+int i=0;
+for(i=cantidadTokens;i<cant_ctes;i++)
+{
+if(strcmp(tablaDeSimbolos[i].nombre, cad1)==0 && strcmp(tablaDeSimbolos[i].tipo,cad2)==0)
+	{printf("CTE_STRING DUPLICADA\n\n");
+	return 1;
+	}
+}
+return 0;
+}

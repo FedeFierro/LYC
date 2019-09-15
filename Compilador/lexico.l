@@ -114,8 +114,7 @@ DEFAULT 				(.)
 							sprintf(auxS,"%s", yytext);
 							quitarComillas();
 							yylval.str_val=auxS; 
-							
-							agregarCadena(yylval.str_val);
+			
 							return CADENA;
 						}
 "\n"      		
@@ -126,8 +125,6 @@ DEFAULT 				(.)
 {DEFAULT}			{
 							sprintf(mensajeDeError, "Caracter invalido: %s", yytext);
 							mostrarError(mensajeDeError);
-							system ("Pause");
-							exit (1);
 						}
 
 
