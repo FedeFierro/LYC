@@ -21,3 +21,13 @@ ENDIF
 b:= 33/6 -2;
  a:=FILTER( _=33*4 AND _ >= 33/6 -2,  [a,pepp, jdf]);
  
+a:="Hola";
+a:="pepe";
+a:="Hola";
+a:="pepe";
+a:="Hola";
+a:="pepe";
+a:="Hola";
+a:="pepe";
+a:="Hola";
+a:="pepe";

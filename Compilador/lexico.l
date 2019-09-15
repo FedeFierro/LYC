@@ -94,7 +94,7 @@ DEFAULT 				(.)
 				 				mostrarError(mensajeDeError);
 							}
 				 			sscanf(yytext,"%d",&(yylval.int_val));
-							agregarEntero(yylval.int_val);
+							
 							return ENTERO;
 						}
 
@@ -103,7 +103,7 @@ DEFAULT 				(.)
 				 				mostrarError(mensajeDeError);
 							}
 				 			sscanf(yytext,"%lf",&(yylval.float_val));
-							agregarReal(yytext);
+							
 							return REAL;
 						}
 
