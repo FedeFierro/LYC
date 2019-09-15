@@ -127,16 +127,9 @@ programa : bloque_declaracion  bloque_programa
 bloque_declaracion: VAR lista_definiciones ENDVAR 
 		{ 
 		finBloqueDeclaraciones=1;
-		quitarDuplicados();
-		 		
-		printf("bloque_declaracion OK\n\n");
-		cant_ctes=cantidadTokens;
-		/*printf("CANTIDAD DE TOKENS: %d\n\n",cantidadTokens);
-		printf("----- TABLA DE SIMBOLOS -----\n");
-		for(i=0;i<cantidadTokens;i++){
-			
-			printf("tipo: %s, nombre: %s\n",tablaDeSimbolos[i].tipo,tablaDeSimbolos[i].nombre,tablaDeSimbolos[i].valor,tablaDeSimbolos[i].longitud);
-		}*/
+		quitarDuplicados(); 
+		printf("bloque_definiciones OK\n\n");
+		cant_ctes=cantidadTokens;	
 		};
 
 lista_definiciones: lista_definiciones definicion {	printf("lista_definiciones -> lista_definiciones definicion OK\n\n");} 
@@ -390,12 +383,15 @@ void guardarTabla(){
 
 	fprintf(arch,"%-30s%-20s%-30s%-5s\n","NOMBRE","TIPO","VALOR", "LONGITUD");
 	fprintf(arch, "======================================================================================================\n");
-
+    //lo mismo que guarda en archivo lo imprimo en pantalla
+    printf("%-30s%-20s%-30s%-5s\n","NOMBRE","TIPO","VALOR", "LONGITUD");
+    printf("======================================================================================================\n");
 	// Recorro la tabla
 	int i = 0;
 	while (i < cant_ctes) {
 
 		fprintf(arch, "%-30s%-20s%-30s%-5d\n", &(tablaDeSimbolos[i].nombre), &(tablaDeSimbolos[i].tipo) , &(tablaDeSimbolos[i].valor), tablaDeSimbolos[i].longitud);
+        printf( "%-30s%-20s%-30s%-5d\n", &(tablaDeSimbolos[i].nombre), &(tablaDeSimbolos[i].tipo) , &(tablaDeSimbolos[i].valor), tablaDeSimbolos[i].longitud);
 		i++;
 	}
 
@@ -406,7 +402,7 @@ void guardarTabla(){
 /* Agregar una constante a la tabla de simbolos */
 
 void agregarConstante(char* nombre,char* tipo) {
-	printf("Agregar cte %s: %s\n\n",nombre, tipo);
+	printf("Agregar cte %s: %s .\n\n",nombre, tipo);
 
 	// Formateo la cadena
 	int length = strlen(nombre);
@@ -425,7 +421,7 @@ void agregarConstante(char* nombre,char* tipo) {
 		strcpy(tablaDeSimbolos[cant_ctes].nombre, nombre_nuevo);
 
 		// Agrego el tipo (Se utiliza para imprimir tabla)
-		strcpy(tablaDeSimbolos[cant_ctes].tipo, CteString);	
+		strcpy(tablaDeSimbolos[cant_ctes].tipo, tipo);	
 
 		// Agrego valor
 		strcpy(tablaDeSimbolos[cant_ctes].valor, nombre_nuevo+1);		// Omito el _
