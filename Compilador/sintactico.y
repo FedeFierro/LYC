@@ -14,6 +14,8 @@ FILE *archivoCodigoIntermedio;
 /* --------------- CONSTANTES --------------- */
 #define TAM_NOMBRE 32	/* Limite tamaño nombre (sumar 1 para _ ) */
 #define CteString "CTE_STRING"
+#define CteInt "CTE_INT"
+#define CteReal "CTE_REAL"
 
 /* --------------- PROTOTIPO DE FUNCIONES PRIMERA ENTREGA --------------- */
 void guardarTabla(void);
@@ -193,8 +195,8 @@ termino: termino OPERACION_MULTIPLICACION factor {printf("term -> term * factor 
 		| factor			{printf("term -> factor OK \n\n");}
 
 factor: ID
-		| ENTERO
-		| REAL
+		| ENTERO 	{agregarEntero(yylval.int_val);}
+		| REAL		{agregarReal(yylval.str_val);}	
 		| CADENA	{agregarCadena(yylval.str_val);}
 		| PARENTESIS_ABIERTO expresion PARENTESIS_CERRADO
 		| filtro
@@ -395,14 +397,14 @@ void agregarCadena(char* nombre) {
 
 	// Formateo la cadena
 	int length = strlen(nombre);
-	printf("LONGITUD: %d\n",length);
-	printf("CADENA QUE MANDE: %s\n", nombre);
+	//printf("LONGITUD: %d\n",length);
+	//printf("CADENA QUE MANDE: %s\n", nombre);
 	char nombre_nuevo[length];
 	strcpy(nombre_nuevo, "_");
 	strcat(nombre_nuevo, nombre);
-	printf("nombre_nuevo + nombre: %s\n", nombre_nuevo);
+	//printf("nombre_nuevo + nombre: %s\n", nombre_nuevo);
 	strcpy(nombre_nuevo + strlen(nombre_nuevo), "\0");
-	printf("nombre_nuevo: %s\n", nombre_nuevo);
+	//printf("nombre_nuevo: %s\n", nombre_nuevo);
 
 	// Verificamos si ya esta cargada
 	if (buscarCte(nombre_nuevo, CteString) == 0) {
@@ -428,29 +430,35 @@ void agregarCadena(char* nombre) {
 /* Agregar entero a la tabla de simbolos */
 void agregarEntero(int valor) {
 
+	
 	// Agrego _ al nombre
 	char nombre_nuevo[TAM_NOMBRE];
 	sprintf(nombre_nuevo, "_%d", valor);
 
+	int length = strlen(nombre_nuevo) -1;
 	// Verificamos si ya esta cargada
-	//if (buscarCte(nombre_nuevo, CteInt) == -1) {
+	if (buscarCte(nombre_nuevo, CteInt) == 0) {
 
 		// Avanzo una posicion en la tabla
-		cantidadTokens++;
+		//cantidadTokens++;
 
 		// Agrego nombre a la tabla
-		strcpy(tablaDeSimbolos[cantidadTokens].nombre, nombre_nuevo);
+		strcpy(tablaDeSimbolos[cant_ctes].nombre, nombre_nuevo);
 
 		// Agrego el tipo (Se utiliza para imprimir tabla)
-		//tablaDeSimbolos[cantidadTokens].tipo = '';	
-		strcpy(tablaDeSimbolos[cantidadTokens].tipo,"ENTERO");	
+		//tablaDeSimbolos[cant_ctes].tipo = '';	
+		strcpy(tablaDeSimbolos[cant_ctes].tipo,CteInt);	
 
-		// Agrego el valor
-		//tablaDeSimbolos[cantidadTokens].valor = valor;
+		// Agrego el valor		
+		sprintf(tablaDeSimbolos[cant_ctes].valor, "%d", valor);
 		
-		sprintf(tablaDeSimbolos[cantidadTokens].valor, "%d", valor);
+		// Agrego la longitud
+		tablaDeSimbolos[cant_ctes].longitud = length;
 		
-	//}
+		cant_ctes++;
+		printf("AGREGO A LA TABLA: %s\n", nombre_nuevo);
+		
+	}
 }
 
 /* Agregar real a la tabla de simbolos */
@@ -460,27 +468,34 @@ void agregarReal(char* valor) {
 	char nombre_nuevo[TAM_NOMBRE];
 	sprintf(nombre_nuevo, "_%f", atof(valor));
 
-	// Verificamos si ya esta cargada
-	//if (buscarCte(nombre_nuevo, CteFloat) == -1) {
+	printf("REAL QUE MANDE : %s\n", valor);
+	
+	int length = strlen(valor);
 
-		// Avanzo una posicion en la tabla
-		cantidadTokens++;
+	// Verificamos si ya esta cargada
+	if (buscarCte(nombre_nuevo, CteReal) == 0) {
 
 		// Agrego nombre a la tabla
-		strcpy(tablaDeSimbolos[cantidadTokens].nombre, nombre_nuevo);
+		strcpy(tablaDeSimbolos[cant_ctes].nombre, nombre_nuevo);
 
 		// Agrego el tipo (Se utiliza para imprimir tabla)
-		//tablaDeSimbolos[cantidadTokens].tipo = '';	
-		strcpy(tablaDeSimbolos[cantidadTokens].tipo,"REAL");
+		strcpy(tablaDeSimbolos[cant_ctes].tipo,CteReal);
 
 		// Agrego el valor
-		//tablaDeSimbolos[cantidadTokens].valor = atof(valor);
-		sprintf(tablaDeSimbolos[cantidadTokens].valor, "%f", atof(valor));
+		//tablaDeSimbolos[cant_ctes].valor = atof(valor);
+		sprintf(tablaDeSimbolos[cant_ctes].valor, "%f", atof(valor));
 		
-	//}
+		// Agrego la longitud
+		tablaDeSimbolos[cant_ctes].longitud = length;
+		
+		// Avanzo una posicion en la tabla
+		cant_ctes++;
+		
+		printf("AGREGO A LA TABLA: %s\n", nombre_nuevo);
+	}
 }
 
-int buscarCte(char* cad1, char* cad2){			//return 1 = ya esta, return 0 = no esta
+int buscarCte(char* cad1, char* cad2){			//return 1 = ya esta, return 0 = no esta //cad1 es nombre a buscar cad2 es el tipo 
 int i=0;
 for(i=cantidadTokens;i<cant_ctes;i++)
 {
