@@ -22,7 +22,7 @@ IF( NOT ( a >= c))
 ENDIF
 b:= 33/6 -2;
  a:=FILTER( _=33*4 AND _ >= 33/6 -2,  [a,pepp, jdf]);
-
+	pepp:=.99;
 READ c
 WRITE "juancito"
 WRITE d

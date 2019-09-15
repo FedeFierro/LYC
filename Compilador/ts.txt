@@ -10,15 +10,22 @@ e                             REAL                                              
 cont                          REAL                                              0    
 pepp                          CADENA                                            0    
 jdf                           ENTERO                                            0    
-_65                           CTE_INT             65                            0    
-_12                           CTE_INT             12                            0    
+_65                           CTE_STRING          65                            0    
+_12                           CTE_STRING          12                            0    
 _Hola                         CTE_STRING          Hola                          4    
 _pepe                         CTE_STRING          pepe                          4    
-_4                            CTE_INT             4                             0    
-_10.4                         CTE_REAL            10.4                          0    
-_5                            CTE_INT             5                             0    
-_7                            CTE_INT             7                             0    
-_8                            CTE_INT             8                             0    
-a                             CTE_INT             33                            0    
-pepp                          CTE_INT             6                             0    
-jdf                           CTE_INT             2                             0    
+_4                            CTE_STRING          4                             0    
+_10.4                         CTE_STRING          10.4                          0    
+_5                            CTE_STRING          5                             0    
+_4                            CTE_STRING          4                             0    
+_7                            CTE_STRING          7                             0    
+_8                            CTE_STRING          8                             0    
+_33                           CTE_STRING          33                            0    
+_6                            CTE_STRING          6                             0    
+_2                            CTE_STRING          2                             0    
+_33                           CTE_STRING          33                            0    
+_4                            CTE_STRING          4                             0    
+_33                           CTE_STRING          33                            0    
+_6                            CTE_STRING          6                             0    
+_2                            CTE_STRING          2                             0    
+_.99                          CTE_STRING          .99                           0    
