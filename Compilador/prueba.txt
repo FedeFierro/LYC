@@ -1,10 +1,12 @@
 VAR
 [INT,STRING]:[a,berta]
 [FLOAT,INT]:[b,var1]
+[INT,INT,FLOAT,FLOAT]:[c,d,e,cont]
+[STRING,INT]:[pepp,jdf]
 ENDVAR
 
 
-a:= FILTER( NOT  _<b , [a,b,c,d,e] );
+a:= FILTER( NOT(  _<b) , [a,b,c,d,e] );
 --/Comentario --/joaal/--/--
 REPEAT
 	a:=c;
@@ -15,12 +17,20 @@ REPEAT
 	ENDIF
 UNTIL (a < 4)
 
-IF(NOTa>=c)
+IF( NOT ( a >= c))
 	[a,b,c,d]:=[10.4,cont, 5+4, 7/8 ]
 ENDIF
 b:= 33/6 -2;
  a:=FILTER( _=33*4 AND _ >= 33/6 -2,  [a,pepp, jdf]);
- 
+
+READ c
+WRITE "juancito"
+WRITE d
+--/Errores de compilacion
+mau:=4; variable no declarada,
+@ caracter invalido,
+
+/--
 a:="Hola";
 a:="pepe";
 a:="Hola";

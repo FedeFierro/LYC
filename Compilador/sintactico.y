@@ -10,6 +10,7 @@ char *yyltext;
 char *yytext;
 FILE *archivoTablaDeSimbolos;
 FILE *archivoCodigoIntermedio;
+char mensajeDeError[200];
 
 /* --------------- CONSTANTES --------------- */
 #define TAM_NOMBRE 32	/* Limite tamaño nombre (sumar 1 para _ ) */
@@ -23,9 +24,9 @@ void agregarEntero(int);
 void agregarReal(char*);
 void agregarCadena(char*);
 int buscarCte(char* , char*);
+int validarVariableDeclarada(char* nombre);
 
 int cantidadTokens = 0;
-
 int i=0; 
 int j=0;
 int cant_elementos=0;
@@ -36,6 +37,7 @@ int cant_variables=0;
 int cant_tipo_dato=0; 
 int diferencia=0;
 int cant_ctes=0;
+
 
 // TABLA SIMBOLOS
 typedef struct
@@ -124,7 +126,8 @@ programa : bloque_declaracion  bloque_programa
 		{ printf("Programa OK\n\n"); };
 
 bloque_declaracion: VAR lista_definiciones ENDVAR 
-		{ quitarDuplicados(); 
+		{ 
+		quitarDuplicados(); 
 		printf("bloque_definiciones OK\n\n");
 		cant_ctes=cantidadTokens;	
 		};
@@ -178,9 +181,10 @@ sentencia : asignacion 	{printf("sentencia -> asignacion OK \n\n");}
 			| entrada_datos			{printf("sentencia -> entrada_datos OK \n\n");}
 			| salida_datos			{printf("sentencia -> salida_datos OK \n\n");}
 					
-entrada_datos: READ ID	{printf("READ ID OK \n\n");}
+entrada_datos: READ ID	{ printf("READ ID OK \n\n");}
 
 salida_datos: WRITE CADENA {printf("WRITE CADENA OK \n\n");}
+			| WRITE ID  { printf("Write ID OK. \n\n");}
 
 bloque_iteracion: REPEAT bloque_programa UNTIL condicion {printf("bloque REPEAT-UNTIL\n\n");}
 
@@ -194,7 +198,7 @@ termino: termino OPERACION_MULTIPLICACION factor {printf("term -> term * factor 
 		| termino OPERACION_DIVISION factor 	{printf("term -> term / factor OK \n\n");}
 		| factor			{printf("term -> factor OK \n\n");}
 
-factor: ID
+factor: ID 
 		| ENTERO 	{agregarEntero(yylval.int_val);}
 		| REAL		{agregarReal(yylval.str_val);}	
 		| CADENA	{agregarCadena(yylval.str_val);}
@@ -208,7 +212,8 @@ bloque_if: OPERADOR_IF condicion bloque_programa OPERADOR_ENDIF
 
 condicion : PARENTESIS_ABIERTO comparacion OPERADOR_AND comparacion PARENTESIS_CERRADO 
 			| PARENTESIS_ABIERTO comparacion OPERADOR_OR comparacion PARENTESIS_CERRADO
-			| PARENTESIS_ABIERTO OPERADOR_NOT condicion PARENTESIS_CERRADO 
+			| PARENTESIS_ABIERTO OPERADOR_NOT PARENTESIS_ABIERTO condicion PARENTESIS_CERRADO PARENTESIS_CERRADO 
+			| PARENTESIS_ABIERTO OPERADOR_NOT PARENTESIS_ABIERTO comparacion PARENTESIS_CERRADO PARENTESIS_CERRADO 
 			| PARENTESIS_ABIERTO comparacion PARENTESIS_CERRADO 		// condicion simple
 			
 comparacion : expresion OPERADOR_MAYOR_A expresion	
@@ -223,7 +228,7 @@ filtro: FILTER PARENTESIS_ABIERTO condicion_filter COMA  CORCHETE_ABIERTO lista_
 
 condicion_filter: comparacion_filter OPERADOR_AND comparacion_filter 
 				| comparacion_filter OPERADOR_OR comparacion_filter
-				| OPERADOR_NOT  comparacion_filter
+				| OPERADOR_NOT PARENTESIS_ABIERTO comparacion_filter PARENTESIS_CERRADO
 				| comparacion_filter
 				
 comparacion_filter : GUION_BAJO OPERADOR_MAYOR_A expresion_numerica	
@@ -249,9 +254,9 @@ termino_numerico: termino_numerico OPERACION_MULTIPLICACION factor_numerico {pri
 		| termino_numerico OPERACION_DIVISION factor_numerico 	{printf("term -> term / factor_numerico OK \n\n");}
 		| factor_numerico			{printf("term -> factor_numerico OK \n\n");}
 
-factor_numerico: ID
-		| ENTERO
-		| REAL
+factor_numerico: ID 
+		| ENTERO {agregarEntero(yylval.int_val);}
+		| REAL {agregarReal(yylval.str_val);}	
 		| PARENTESIS_ABIERTO expresion_numerica PARENTESIS_CERRADO
 		| filtro
 
@@ -293,7 +298,7 @@ void guardarEnVectorTablaSimbolos(int opc, char * cad){
 		pos_td++;
 	}else{
 		strcpy(tablaDeSimbolos[pos_cv].nombre,cad);
-        pos_cv++;
+		pos_cv++;
 		cant_variables++;
 	}
 }
@@ -429,8 +434,6 @@ void agregarCadena(char* nombre) {
 
 /* Agregar entero a la tabla de simbolos */
 void agregarEntero(int valor) {
-
-	
 	// Agrego _ al nombre
 	char nombre_nuevo[TAM_NOMBRE];
 	sprintf(nombre_nuevo, "_%d", valor);
@@ -451,10 +454,7 @@ void agregarEntero(int valor) {
 
 		// Agrego el valor		
 		sprintf(tablaDeSimbolos[cant_ctes].valor, "%d", valor);
-		
-		// Agrego la longitud
-		tablaDeSimbolos[cant_ctes].longitud = length;
-		
+				
 		cant_ctes++;
 		printf("AGREGO A LA TABLA: %s\n", nombre_nuevo);
 		
@@ -463,15 +463,14 @@ void agregarEntero(int valor) {
 
 /* Agregar real a la tabla de simbolos */
 void agregarReal(char* valor) {
-
+	int length = strlen(valor);
+	
 	// Agrego _ al nombre
-	char nombre_nuevo[TAM_NOMBRE];
-	sprintf(nombre_nuevo, "_%f", atof(valor));
+	char nombre_nuevo[length];
+	sprintf(nombre_nuevo, "_%s", valor);
 
 	printf("REAL QUE MANDE : %s\n", valor);
 	
-	int length = strlen(valor);
-
 	// Verificamos si ya esta cargada
 	if (buscarCte(nombre_nuevo, CteReal) == 0) {
 
@@ -483,11 +482,7 @@ void agregarReal(char* valor) {
 
 		// Agrego el valor
 		//tablaDeSimbolos[cant_ctes].valor = atof(valor);
-		sprintf(tablaDeSimbolos[cant_ctes].valor, "%f", atof(valor));
-		
-		// Agrego la longitud
-		tablaDeSimbolos[cant_ctes].longitud = length;
-		
+		sprintf(tablaDeSimbolos[cant_ctes].valor, "%s", valor);
 		// Avanzo una posicion en la tabla
 		cant_ctes++;
 		
@@ -495,14 +490,26 @@ void agregarReal(char* valor) {
 	}
 }
 
-int buscarCte(char* cad1, char* cad2){			//return 1 = ya esta, return 0 = no esta //cad1 es nombre a buscar cad2 es el tipo 
-int i=0;
-for(i=cantidadTokens;i<cant_ctes;i++)
-{
-if(strcmp(tablaDeSimbolos[i].nombre, cad1)==0 && strcmp(tablaDeSimbolos[i].tipo,cad2)==0)
-	{printf("CTE_STRING DUPLICADA\n\n");
-	return 1;
+int buscarCte(char* nombre, char* tipo){			//return 1 = ya esta, return 0 = no esta //cad1 es nombre a buscar cad2 es el tipo 
+	int i = cantidadTokens;
+	for( i ; i < cant_ctes ; i++){
+		if(strcmp(tablaDeSimbolos[i].nombre, nombre)==0 
+				&& strcmp(tablaDeSimbolos[i].tipo,tipo)==0){
+			printf("CTE_STRING DUPLICADA\n\n");
+			return 1;
+		}
 	}
+	return 0;
 }
-return 0;
+int validarVariableDeclarada(char* nombre){
+	printf("Validar variable %s.\n", nombre);
+	int i = 0;
+	for(i ; i< cantidadTokens; i++){
+		if(strcmp(tablaDeSimbolos[i].nombre,nombre)==0){
+			return;
+		}
+	}
+	sprintf(mensajeDeError, "La Variable: %s - No esta declarada.\n", nombre);
+	mostrarError(mensajeDeError);
+	
 }

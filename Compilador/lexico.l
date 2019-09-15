@@ -16,10 +16,12 @@ int validarLongitudEntero();
 int validarLongitudCadena();
 void mostrarError(char*);
 void quitarComillas();
+int validarVariableDeclarada(char* nombre);
 
 FILE  *yyin;
 char auxS[100];
 char mensajeDeError[200];
+int finDeclaraciones = 0;
 
 %}
 %option noyywrap  
@@ -66,7 +68,10 @@ DEFAULT 				(.)
 "="							{return OPERADOR_IGUAL_A;}
 "!="						{return OPERADOR_DISTINTO_A;}
 "VAR"						{return VAR;}
-"ENDVAR"					{return ENDVAR;}
+"ENDVAR"					{
+								finDeclaraciones=1;
+								return ENDVAR;
+							}
 ";"							{return PUNTO_Y_COMA;}
 ":"							{return DOS_PUNTOS;}
 "FLOAT"						{return TIPO_REAL;}
@@ -86,6 +91,9 @@ DEFAULT 				(.)
 				 				mostrarError(mensajeDeError);
 							}
 							yylval.str_val=auxS;
+							if(finDeclaraciones==1){
+								validarVariableDeclarada(yytext);
+							}
 							return ID;
 						}
 
@@ -104,6 +112,7 @@ DEFAULT 				(.)
 							}
 				 			sscanf(yytext,"%lf",&(yylval.float_val));
 							//agregarReal(yytext);
+							yylval.str_val=yytext;
 							return REAL;
 						}
 
