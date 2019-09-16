@@ -10,16 +10,14 @@ e                             REAL                                              
 cont                          REAL                                              0    
 pepp                          CADENA                                            0    
 jdf                           ENTERO                                            0    
+Q                             ENTERO                                            0    
+x                             CADENA                                            0    
+valorentero                   ENTERO                                            0    
 _65                           CTE_STRING          65                            0    
 _12                           CTE_STRING          12                            0    
 _Hola                         CTE_STRING          Hola                          4    
 _pepe                         CTE_STRING          pepe                          4    
 _4                            CTE_STRING          4                             0    
-_10.4                         CTE_STRING          10.4                          0    
-_5                            CTE_STRING          5                             0    
-_4                            CTE_STRING          4                             0    
-_7                            CTE_STRING          7                             0    
-_8                            CTE_STRING          8                             0    
 _33                           CTE_STRING          33                            0    
 _6                            CTE_STRING          6                             0    
 _2                            CTE_STRING          2                             0    

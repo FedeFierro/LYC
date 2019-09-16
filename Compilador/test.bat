@@ -1,6 +1,6 @@
-c:\GnuWin32\bin\flex lexico.l
-c:\GnuWin32\bin\bison -dyv sintactico.y
-c:\MinGW\bin\gcc.exe lex.yy.c y.tab.c -o execute.exe
+flex lexico.l
+bison -dyv sintactico.y
+gcc.exe lex.yy.c y.tab.c -o execute.exe
 pause
 execute.exe prueba.txt
 del lex.yy.c
