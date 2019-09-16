@@ -83,8 +83,6 @@ DEFAULT 				(.)
 "_"							{return GUION_BAJO;}
 
 
-
-
 {ID}					{	sprintf(auxS,"%s", yytext);
 							if(validarLongitudId() == 0) {
 								sprintf(mensajeDeError, "El identificador %s excede los %d caracteres de longitud.", yytext, LIMITE_ID);

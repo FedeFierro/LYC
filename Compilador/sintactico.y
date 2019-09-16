@@ -22,7 +22,7 @@ char mensajeDeError[200];
 void guardarTabla(void);
 void agregarConstante(char*,char*);
 int buscarCte(char* , char*);
-int validarVariableDeclarada(char* nombre);
+void validarVariableDeclarada(char* nombre);
 
 int cantidadTokens = 0;
 int i=0; 
@@ -127,9 +127,16 @@ programa : bloque_declaracion  bloque_programa
 bloque_declaracion: VAR lista_definiciones ENDVAR 
 		{ 
 		finBloqueDeclaraciones=1;
-		quitarDuplicados(); 
-		printf("bloque_definiciones OK\n\n");
-		cant_ctes=cantidadTokens;	
+		quitarDuplicados();
+		 		
+		printf("bloque_declaracion OK\n\n");
+		cant_ctes=cantidadTokens;
+		/*printf("CANTIDAD DE TOKENS: %d\n\n",cantidadTokens);
+		printf("----- TABLA DE SIMBOLOS -----\n");
+		for(i=0;i<cantidadTokens;i++){
+			
+			printf("tipo: %s, nombre: %s\n",tablaDeSimbolos[i].tipo,tablaDeSimbolos[i].nombre,tablaDeSimbolos[i].valor,tablaDeSimbolos[i].longitud);
+		}*/
 		};
 
 lista_definiciones: lista_definiciones definicion {	printf("lista_definiciones -> lista_definiciones definicion OK\n\n");} 
@@ -145,17 +152,17 @@ tipo_dato:
   TIPO_ENTERO { 
       guardarTipo("ENTERO");
       guardarEnVectorTablaSimbolos(1,tipoVariableActual);
-      printf("TIPO_ENTERO en tipo_variable OK\n");
+      printf("TIPO_ENTERO en tipo_variable OK\n\n");
     }
   | TIPO_REAL {
       guardarTipo("REAL");
       guardarEnVectorTablaSimbolos(1,tipoVariableActual);
-      printf("TIPO_REAL en tipo_variable OK\n");
+      printf("TIPO_REAL en tipo_variable OK\n\n");
     }
   | TIPO_CADENA{
       guardarTipo("CADENA");
       guardarEnVectorTablaSimbolos(1,tipoVariableActual);
-      printf("TIPO_CADENA en tipo_variable OK\n");
+      printf("TIPO_CADENA en tipo_variable OK\n\n");
     }
 
 lista_ids: 
@@ -184,9 +191,9 @@ sentencia : asignacion 	{printf("sentencia -> asignacion OK \n\n");}
 entrada_datos: READ ID	{ printf("READ ID OK \n\n");}
 
 salida_datos: WRITE CADENA {printf("WRITE CADENA OK \n\n");}
-			| WRITE ID  { printf("Write ID OK. \n\n");}
+			| WRITE ID  { printf("WRITE ID OK\n\n");}
 
-bloque_iteracion: REPEAT bloque_programa UNTIL condicion {printf("bloque REPEAT-UNTIL\n\n");}
+bloque_iteracion: REPEAT bloque_programa UNTIL condicion {printf("bloque REPEAT-UNTIL OK\n\n");}
 
 asignacion: ID OPERADOR_ASIGNACION expresion PUNTO_Y_COMA	{printf("asignacion OK\n\n");}
 
@@ -199,16 +206,16 @@ termino: termino OPERACION_MULTIPLICACION factor {printf("term -> term * factor 
 		| factor			{printf("term -> factor OK \n\n");}
 
 factor: ID 
-		| ENTERO 	{agregarConstante(yylval.str_val,CteInt);}
-		| REAL		{agregarConstante(yylval.str_val,CteReal);}	
-		| CADENA	{agregarConstante(yylval.str_val,CteString);}
-		| PARENTESIS_ABIERTO expresion PARENTESIS_CERRADO
-		| filtro
+		| ENTERO 	{printf("factor -> Cte_entera OK\n\n");agregarConstante(yylval.str_val,CteInt);}
+		| REAL		{printf("factor -> Cte_Real OK\n\n");agregarConstante(yylval.str_val,CteReal);}	
+		| CADENA	{printf("factor -> Cte_string OK\n\n");agregarConstante(yylval.str_val,CteString);}
+		| PARENTESIS_ABIERTO expresion PARENTESIS_CERRADO	{printf("factor -> ( expresion ) OK\n\n");}
+		| filtro {printf("factor -> filtro OK\n\n");}
 		
-bloque_condicional: bloque_if {printf("bloque_condicional\n");}
+bloque_condicional: bloque_if {printf("bloque_condicional OK\n\n\n");}
 
-bloque_if: OPERADOR_IF condicion bloque_programa OPERADOR_ENDIF 
-		| OPERADOR_IF condicion  bloque_programa OPERADOR_ELSE bloque_programa OPERADOR_ENDIF 
+bloque_if: OPERADOR_IF condicion bloque_programa OPERADOR_ENDIF	{printf("bloque_if -> IF condicion programa ENDIF\n\n");} 
+		| OPERADOR_IF condicion  bloque_programa OPERADOR_ELSE bloque_programa OPERADOR_ENDIF {printf("bloque_if -> IF condicion programa ELSE programa ENDIF\n\n");}
 
 condicion : PARENTESIS_ABIERTO comparacion OPERADOR_AND comparacion PARENTESIS_CERRADO 
 			| PARENTESIS_ABIERTO comparacion OPERADOR_OR comparacion PARENTESIS_CERRADO
@@ -240,7 +247,7 @@ comparacion_filter : GUION_BAJO OPERADOR_MAYOR_A expresion_numerica
 
 				
 asignacion_multiple: CORCHETE_ABIERTO lista_ids CORCHETE_CERRADO OPERADOR_ASIGNACION CORCHETE_ABIERTO lista_expresiones CORCHETE_CERRADO 
-		{printf("hay una asignacion multiple OK \n\n");}
+		{printf("ASIGNACION MULTIPLE OK\n\n");}
  
 lista_expresiones : lista_expresiones COMA expresion_numerica
 				| expresion_numerica
@@ -268,17 +275,16 @@ int main(int argc,char *argv[]){
 		printf("\nNo se puede abrir el archivo: %s\n", argv[1]);
 	}else {
 		yyparse();
-		printf("----- TABLA DE SIMBOLOS -----\n");
+		/*printf("----- TABLA DE SIMBOLOS -----\n");
 		for(i=0;i<cant_ctes;i++){
 			
 			printf("tipo: %s, nombre: %s\n, valor: %s, longitud: %d",tablaDeSimbolos[i].tipo,tablaDeSimbolos[i].nombre,tablaDeSimbolos[i].valor,tablaDeSimbolos[i].longitud);
-		}
+		}*/
 		guardarTabla();
 	}
 	fclose(yyin);
 	return 0;
 }
-
 
 void mostrarError(char *mensaje) {
   printf("%s\n", mensaje);
@@ -348,10 +354,9 @@ void quitarDuplicados(){
 		if(strcmp(tablaDeSimbolos[i].nombre,"@")!=0){
 			cantidadTokens++;
 			for(j=i+1;j<cant_elementos;j++){
-				if(strcmp(tablaDeSimbolos[i].tipo,tablaDeSimbolos[j].tipo)==0 
-						&& strcmp(tablaDeSimbolos[i].nombre,tablaDeSimbolos[j].nombre)==0){
+				if(strcmp(tablaDeSimbolos[i].tipo,tablaDeSimbolos[j].tipo)==0 && strcmp(tablaDeSimbolos[i].nombre,tablaDeSimbolos[j].nombre)==0){		// si los dos son iguales
 					strcpy(tablaDeSimbolos[j].tipo, "@");
-					strcpy(tablaDeSimbolos[j].nombre, "@");
+					strcpy(tablaDeSimbolos[j].nombre, "@");				// doy de baja a todos los proximos que son iguales
 				}
 			}
 		}else{
@@ -361,6 +366,7 @@ void quitarDuplicados(){
 				if(j<cant_elementos){
 					strcpy(tablaDeSimbolos[i].nombre,tablaDeSimbolos[j].nombre);
 					strcpy(tablaDeSimbolos[i].tipo,tablaDeSimbolos[j].tipo);
+					i--;
 				}else{
 					i=cant_elementos;
 				}
@@ -368,7 +374,6 @@ void quitarDuplicados(){
 		}
 	}
 }
-
 
 /* Guarda la tabla generada en un txt */
 void guardarTabla(){
@@ -398,11 +403,10 @@ void guardarTabla(){
 }
 
 
-
-/* Agregar cadena a la tabla de simbolos */
+/* Agregar una constante a la tabla de simbolos */
 
 void agregarConstante(char* nombre,char* tipo) {
-	printf("Agregar cte %s: %s .\n\n",nombre, tipo);
+	printf("Agregar cte %s: %s\n\n",nombre, tipo);
 
 	// Formateo la cadena
 	int length = strlen(nombre);
@@ -435,7 +439,7 @@ void agregarConstante(char* nombre,char* tipo) {
 	}
 }
 
-int buscarCte(char* nombre, char* tipo){			//return 1 = ya esta, return 0 = no esta //cad1 es nombre a buscar cad2 es el tipo 
+int buscarCte(char* nombre, char* tipo){			//return 1 = ya esta, return 0 = no esta , cad1 es nombre a buscar cad2 es el tipo 
 	int i = cantidadTokens;
 	for( i ; i < cant_ctes ; i++){
 		if(strcmp(tablaDeSimbolos[i].nombre, nombre)==0 
@@ -446,12 +450,13 @@ int buscarCte(char* nombre, char* tipo){			//return 1 = ya esta, return 0 = no e
 	}
 	return 0;
 }
-int validarVariableDeclarada(char* nombre){
-	int i = 0;
-	for(i ; i< cantidadTokens; i++){
-		if(strcmp(tablaDeSimbolos[i].nombre,nombre)==0){
+
+void validarVariableDeclarada(char* nombre){
+	int i;
+	for(i=0 ; i< cantidadTokens; i++){
+		if(strcmp(tablaDeSimbolos[i].nombre,nombre)==0)
 			return;
-		}
+		
 	}
 	sprintf(mensajeDeError, "La Variable: %s - No esta declarada.\n", nombre);
 	mostrarError(mensajeDeError);
