@@ -354,7 +354,7 @@ void quitarDuplicados(){
 			}
 		}else{
 			j=i+1;
-			while(j<cant_elementos && strcmp(tablaDeSimbolos[j].tipo,"@")==0){
+			while(j<cant_elementos && strcmp(tablaDeSimbolos[j].tipo,"@")==0)
 				j++;
 				if(j<cant_elementos){
 					strcpy(tablaDeSimbolos[i].nombre,tablaDeSimbolos[j].nombre);
@@ -363,7 +363,7 @@ void quitarDuplicados(){
 				}else{
 					i=cant_elementos;
 				}
-			}
+			
 		}
 	}
 }

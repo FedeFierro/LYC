@@ -1,15 +1,17 @@
 VAR
-[INT,STRING,INT,FLOAT]:[a,berta]
+[INT,STRING,INT,FLOAT]:[a,berta]					--/Mas tipos de datos que variables/--
 [FLOAT,INT]:[b,var1]
 [INT,INT,FLOAT,FLOAT]:[c,d,e,cont]
-[STRING,INT]:[pepp,jdf,x,y,z]
+[INT,INT,FLOAT,FLOAT]:[c,d,e,cont]
+[STRING,INT]:[pepp,jdf,x,y,z]					--/Mas variables que tipos de datos/--
+[INT,INT,FLOAT,FLOAT]:[c,d,e,cont]				--/VARIABLES DUPLICADAS --/ COMENTARIO dentro de un comentario/--/--
 [INT]:[Q]
 [FLOAT,INT]:[b,var1]
 [STRING]:[x]
 [INT]:[valorentero]
 ENDVAR
 
---/Comentario --/joaal/--/--
+--/Comentario 13213123123123/--
 REPEAT
 	a:=c;
 	IF(a<b OR 65+12 = c)
@@ -29,7 +31,8 @@ WRITE "juancito"
 mau:=4; variable no declarada,
 @ caracter invalido,
 /--
-
+a:="Hola";
+a:="pepe";
 a:="Hola";
 a:="pepe";
 
