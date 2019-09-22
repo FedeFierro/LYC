@@ -18,11 +18,30 @@ char mensajeDeError[200];
 #define CteInt "CTE_INT"
 #define CteReal "CTE_REAL"
 
+// TABLA SIMBOLOS
+typedef struct
+{
+    char nombre[100];
+    char tipo  [11];
+    char valor [100];
+    int longitud;
+} struct_tabla_de_simbolos;
+
+struct_tabla_de_simbolos tablaDeSimbolos[200];
+
+
+
 /* --------------- PROTOTIPO DE FUNCIONES PRIMERA ENTREGA --------------- */
 void guardarTabla(void);
 void agregarConstante(char*,char*);
 int buscarCte(char* , char*);
 void validarVariableDeclarada(char* nombre);
+void mostrarError(char *mensaje);
+void guardarTipo(char * tipoVariable);
+void guardarEnVectorTablaSimbolos(int opc, char * cad);
+void acomodarPunterosTS();
+void quitarDuplicados();
+void copiarCharEn(char **, char*);
 
 int cantidadTokens = 0;
 int i=0; 
@@ -38,31 +57,94 @@ int cant_ctes=0;
 int finBloqueDeclaraciones=0;
 
 
-// TABLA SIMBOLOS
-typedef struct
-{
-    char nombre[100];
-    char tipo  [11];
-    char valor [100];
-    int longitud;
-} struct_tabla_de_simbolos;
-
-struct_tabla_de_simbolos tablaDeSimbolos[200];
-
 char tipoVariableActual[20];
 
-void copiarCharEn(char **, char*);
+
 char* operadorAux;
 char* idAux;
 
 int yylex();
 int yyerror();
 
-void mostrarError(char *mensaje);
-void guardarTipo(char * tipoVariable);
-void guardarEnVectorTablaSimbolos(int opc, char * cad);
-void acomodarPunterosTS();
-void quitarDuplicados();
+/*Funciones para tercetos*/
+#define DEBUG		0
+#define PILA_EXPRESION	1
+#define PILA_FACTOR	2
+#define PILA_OPERADOR 3
+#define PILA_IF 4
+#define PILA_WHILE 5
+
+struct node
+{
+    char data[100];
+    struct node *link;
+};
+
+
+typedef struct terceto {
+							char ope[35];
+							char te1[30];
+							char te2[30];
+							int nrot;
+						}	terceto;
+				
+terceto Eind;
+terceto Tind;
+terceto Find;
+terceto Aind;
+terceto AVGind;
+
+
+
+// Variable para guardar el dato (float o string) asignado a un id.
+char id_aux[30];
+
+terceto crear_terceto(char*, char*, char*);
+terceto * buscar_terceto(terceto);
+void escribe_arch_tercetos();
+void imprimir_terceto_arch(terceto, FILE *);
+void imp_txt(char *);
+
+
+char aux4[40];
+char aux5[40];
+terceto * vector_tercetos; // vectro de tercetos
+int indice_terceto = 0;	   // Cantidad de elementos e indice de tercetos
+
+
+//estructura del terceto operacion, tiene los valores de los numeros de tercetos que se estan usando
+typedef struct terceto_operacion	{
+										int exp;
+										int ter;
+										int	fac;
+									} terceto_operacion;
+
+//nodo de los tercetos de operaciones
+struct nodo_operaciones	{
+							terceto_operacion ope;
+							struct nodo_operaciones *link;
+						} *pila_ope = NULL;
+
+struct nodo_operacion	{
+							char ope[2];
+							struct nodo_operacion *sig;
+						}*pila_exp, *pila_fac;
+								
+void setearTercetoOperacionActual(int, int, int);
+terceto_operacion obtenerTercetoOperacionActual();								
+								
+void addNivelPar();
+terceto_operacion delNivelPar();
+
+void apilar_oper(int, char*);
+void desapilar_oper(int, char*);
+void negar_terceto(int p_ind);
+
+void apilar(int, char *);
+int desapilar(int);
+
+struct node *pila_operador = NULL, *pila_while = NULL, *pila_if = NULL;
+/*-----------------------------------------------------------------------*/
 
 %}
 
@@ -457,4 +539,268 @@ void validarVariableDeclarada(char* nombre){
 	sprintf(mensajeDeError, "La Variable: %s - No esta declarada.\n", nombre);
 	mostrarError(mensajeDeError);
 	
+}
+
+
+/*Funciones tercetps*/
+/*Pila*/
+// borra un elemento de la pila
+int desapilar(int p_des)
+{
+	int res;
+    struct node *temp;
+    
+	switch(p_des){
+		case PILA_OPERADOR:
+	        temp = pila_operador;
+		    pila_operador = pila_operador->link;
+	    	break;
+		case PILA_WHILE:
+	        temp = pila_while;
+		    pila_while = pila_while->link;
+	    	break;
+		case PILA_IF:
+	        temp = pila_if;
+		    pila_if = pila_if->link;
+    	break;
+		
+    }
+// inserta un elemento en la pila
+void apilar(int p_des, char * p_dato, struct node *pila_operador ,struct node *pila_while, struct node *pila_if)
+{
+    struct node *temp;
+    
+	temp = (struct node *) malloc (sizeof(struct node));
+
+	strcpy(temp->data , p_dato);
+    
+	switch(p_des){
+    	case PILA_OPERADOR:
+	    	temp->link = pila_operador;
+	    	pila_operador = temp;
+    	break;
+	case PILA_WHILE:
+	    	temp->link = pila_while;
+	    	pila_while = temp;
+		break;
+	case PILA_IF:
+	    	temp->link = pila_if;
+	    	pila_if = temp;
+		break;
+		
+    }
+}    
+	res = atoi(temp->data);
+    free(temp);
+	return res;
+}
+
+void desapilar_oper(int p_dest, char* p_res)
+{
+    struct nodo_operacion *temp;
+    
+	switch(p_dest)
+	{
+    	case PILA_EXPRESION:
+	    	if (pila_exp != NULL)
+		    {
+		        temp = pila_exp;
+		        pila_exp = pila_exp->sig;
+		    }	
+    	break;
+    	case PILA_FACTOR:
+	    	if (pila_fac != NULL)
+		    {
+		        temp = pila_fac;
+		        pila_fac = pila_fac->sig;
+		    }	
+    	break;
+    }
+	
+	strcpy(p_res, temp->ope);
+    
+	free(temp);
+}
+void apilar_oper(int p_dest, char* p_ope)
+{
+	struct nodo_operacion *temp;
+    
+	temp = (struct nodo_operacion *) malloc (sizeof(struct nodo_operacion));
+
+    strcpy(temp->ope, p_ope);
+	
+    switch(p_dest)
+	{
+    	case PILA_EXPRESION:
+	    	temp->sig = pila_fac;
+	    	pila_exp = temp;	
+    	break;
+    	case PILA_FACTOR:
+    		temp->sig = pila_fac;
+	    	pila_fac = temp;	
+    	break;
+    }
+}
+// Genera una cadena string con un terceto
+
+
+void terceto_a_string(terceto p_ter, char * p_ster) 
+{	
+	if(strcmp(p_ter.ope, "BI") == 0)  // salto incondicional
+		sprintf(p_ster, "[%d] (%s, [%s], -)", p_ter.nrot, p_ter.ope, p_ter.te2);
+	else 
+		if(strcmp(p_ter.te1, "-1") == 0 && strcmp(p_ter.te2, "-1") == 0 ) // terceto de asignacion de memoria
+			sprintf(p_ster, "[%d] (%s, _, _)", p_ter.nrot, p_ter.ope);
+		else 
+			if(strcmp(p_ter.te2, "-1") == 0) // terceto en el caso cuando se escriben los cmp 
+				sprintf(p_ster, "[%d] (%s, [%s], _)", p_ter.nrot, p_ter.ope, p_ter.te1);
+			else // terceto completo
+				sprintf(p_ster, "[%d] (%s, [%s], [%s])", p_ter.nrot, p_ter.ope, p_ter.te1, p_ter.te2);
+
+	//printf("funcion que terceto_a_string: nrot %d terceto %s\n", p_ter.nrot, p_ster);
+				
+}
+
+// Niega la la condicion de un terceto
+void negar_terceto(int p_ind)
+{
+	if(strcmp(vector_tercetos[p_ind].ope, "BLT") == 0)
+		strcpy(vector_tercetos[p_ind].ope, "BGE");
+	else 
+		if(strcmp(vector_tercetos[p_ind].ope, "BGE") == 0)
+			strcpy(vector_tercetos[p_ind].ope, "BLT");
+		else 
+			if(strcmp(vector_tercetos[p_ind].ope, "BGT") == 0)
+				strcpy(vector_tercetos[p_ind].ope, "BLE");
+			else 
+				if(strcmp(vector_tercetos[p_ind].ope, "BLE") == 0)
+					strcpy(vector_tercetos[p_ind].ope, "BGT");
+				else 
+					if(strcmp(vector_tercetos[p_ind].ope, "BEQ") == 0)
+						strcpy(vector_tercetos[p_ind].ope, "BNE");
+					else 
+						if(strcmp(vector_tercetos[p_ind].ope, "BNE") == 0)
+							strcpy(vector_tercetos[p_ind].ope, "BEQ");
+}
+
+// decrementa el nivel de parentesis para operar
+terceto_operacion delNivelPar()
+{
+	terceto_operacion res;
+	
+    struct nodo_operaciones *temp;
+	
+	if (pila_ope != NULL)
+	{
+		temp = pila_ope;
+		pila_ope = pila_ope->link;
+	}
+	
+	res = temp->ope;
+	
+	setearTercetoOperacionActual(-1, -1, Eind.nrot);
+    
+	free(temp);
+	
+	return res;
+}
+// permite modificar los valores de terceto de operacion
+void setearTercetoOperacionActual(int p_exp, int p_ter, int p_fac)
+{
+	if(p_exp >= 0)
+		pila_ope->ope.exp = p_exp;
+	
+	if(p_ter >= 0)
+		pila_ope->ope.ter = p_ter;
+	
+	if(p_fac >= 0)
+		pila_ope->ope.fac = p_fac;
+}
+
+// devuelve el terceto de operacion actual 
+terceto_operacion obtenerTercetoOperacionActual()
+{
+	return pila_ope->ope;
+}
+
+// crea un nuevo nivel de parentesis para operar
+void addNivelPar()
+{
+	struct nodo_operaciones *temp;
+	
+	temp = (struct nodo_operaciones *) malloc (sizeof(struct nodo_operaciones));
+	
+	temp->ope.exp = -1;
+	temp->ope.ter = -1;
+	temp->ope.fac = -1;
+	temp->link = pila_ope;
+	pila_ope = temp;
+}
+//imprime un terceto en un urchivo
+void imprimir_terceto_arch(terceto p_ter, FILE * p_arch)
+{	
+	if(strcmp(p_ter.ope, "BI") == 0) //salto incondicional
+		fprintf(p_arch, "[%d] (%s, [%d], -)\n", p_ter.nrot, p_ter.ope, p_ter.te2);
+	else 
+		if(strcmp(p_ter.te1, "-1") == 0 && strcmp(p_ter.te2 , "-1") ==0 ) //terceto de asignacion de memoria
+			fprintf(p_arch, "[%d] (%s, _, _)\n", p_ter.nrot, p_ter.ope);
+		else 
+			if(strcmp(p_ter.te2 , "-1") == 0) //terceto en el caso cuando se escriben los cmp 
+				fprintf(p_arch, "[%d] (%s, %s, _)\n", p_ter.nrot, p_ter.ope, p_ter.te1);
+			else //terceto completo
+				fprintf(p_arch, "[%d] (%s, %s, %s)\n", p_ter.nrot, p_ter.ope, p_ter.te1, p_ter.te2);	
+}
+// escribe los tercetos en un archivo
+void escribe_arch_tercetos( )
+{
+	int i;
+	FILE * arch;
+
+	arch = fopen("intermedia.txt", "w+");
+	
+	for(i = 0; i < indice_terceto; i++)
+		imprimir_terceto_arch(vector_tercetos[i], arch);		
+	
+	terceto taux = crear_terceto("fin", "-1", "-1");
+	
+	imprimir_terceto_arch(taux, arch);
+	
+	fclose(arch);
+}
+
+//Busca un terceto en el vector de tercetos
+terceto * buscar_terceto(terceto p_ter)
+{
+	int i;
+	
+	for (i = 0; i < indice_terceto; ++i) 
+		if(strcmp(vector_tercetos[i].ope, p_ter.ope) == 0 && strcmp(vector_tercetos[i].te1, "-1") == 0 && strcmp(vector_tercetos[i].te2, "-1") == 0)
+			return &(vector_tercetos[i]); 
+
+	return NULL;
+}
+//Crea el terceto con los indices de los tercetos. Si no existen tiene -1
+terceto crear_terceto(char* p_ope, char* p_te1, char* p_te2)
+{
+	terceto res;
+	terceto *tmp;
+	terceto *teraux;
+	
+	strcpy(res.ope, p_ope);
+	strcpy(res.te1, p_te1);
+	strcpy(res.te2, p_te2);
+	
+	teraux = buscar_terceto(res);
+	
+	if(indice_terceto > 0 && teraux != NULL)
+		res = *teraux;
+	else{
+		res.nrot = indice_terceto++;
+		vector_tercetos = (terceto *) realloc (vector_tercetos, sizeof(terceto) * indice_terceto);
+		vector_tercetos[indice_terceto-1] = res;
+		
+		//printf("terceto creado [%d] (%s, %s, %s)\n", res.nrot, res.ope, res.te1, res.te2);
+	}
+	
+	return res;
 }
