@@ -130,6 +130,12 @@
     <Text Include="makefile.txt" />
     <Text Include="prueba.txt" />
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="pila.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="pila.h" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

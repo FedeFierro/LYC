@@ -22,4 +22,14 @@
     <Text Include="makefile.txt" />
     <Text Include="prueba.txt" />
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="pila.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="pila.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
 </Project>

@@ -24,3 +24,8 @@ _6                            CTE_INT             6                             
 _2                            CTE_INT             2                             0    
 _.99                          CTE_REAL            .99                           0    
 _juancito                     CTE_STRING          juancito                      8    
+_10                           CTE_INT             10                            0    
+_5                            CTE_INT             5                             0    
+_34.88                        CTE_REAL            34.88                         0    
+_88                           CTE_INT             88                            0    
+_3.55                         CTE_REAL            3.55                          0    

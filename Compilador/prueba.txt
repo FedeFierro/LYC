@@ -26,6 +26,9 @@ b:= 33/6 -2;
 	pepp:=.99;
 READ c
 PRINT "juancito"
+a:= b + c + 10 * 5 / (4 + a) ;
+
+[c,d,e,cont]:=[34.88 , 6 + 88 /3.55, c,4 ]
 
 --/Errores de compilacion mau:=4 variable no declarada @ caracter invalido /--
 
