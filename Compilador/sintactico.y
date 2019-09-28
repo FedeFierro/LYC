@@ -173,7 +173,7 @@ COMA
 OPERADOR_ASIGNACION
 CADENA
 READ
-WRITE
+PRINT
 OPERADOR_IF 
 OPERADOR_ELSE
 OPERADOR_ENDIF
@@ -265,8 +265,8 @@ sentencia : asignacion 	{printf("sentencia -> asignacion OK \n\n");}
 					
 entrada_datos: READ ID	{ printf("READ ID OK \n\n");}
 
-salida_datos: WRITE CADENA {printf("WRITE CADENA OK \n\n");}
-			| WRITE ID  { printf("WRITE ID OK\n\n");}
+salida_datos: PRINT CADENA {printf("PRINT CADENA OK \n\n");}
+			| PRINT ID  { printf("PRINT ID OK\n\n");}
 
 bloque_iteracion: REPEAT bloque_programa UNTIL condicion {printf("bloque REPEAT-UNTIL OK\n\n");}
 

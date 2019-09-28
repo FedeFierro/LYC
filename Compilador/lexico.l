@@ -54,7 +54,7 @@ DEFAULT 				(.)
 ","							{return COMA;}
 ":="						{return OPERADOR_ASIGNACION;}
 "READ"						{return READ;}
-"WRITE"						{return WRITE;}
+"PRINT"						{return PRINT;}
 "IF"						{return OPERADOR_IF;}
 "ELSE"						{return OPERADOR_ELSE;}
 "ENDIF"						{return OPERADOR_ENDIF;}

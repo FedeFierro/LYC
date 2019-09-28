@@ -20,12 +20,12 @@ REPEAT
 		a:="pepe";
 	ENDIF
 UNTIL (a < 4)
-
+b:=2147483649.2147483644;
 b:= 33/6 -2;
  a:=FILTER( _=33*4 AND _ >= 33/6 -2,[a,pepp,jdf]);
 	pepp:=.99;
 READ c
-WRITE "juancito"
+PRINT "juancito"
 
 --/Errores de compilacion
 mau:=4; variable no declarada,
