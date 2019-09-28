@@ -263,9 +263,9 @@ sentencia : asignacion 	{printf("sentencia -> asignacion OK \n\n");}
 			| entrada_datos			{printf("sentencia -> entrada_datos OK \n\n");}
 			| salida_datos			{printf("sentencia -> salida_datos OK \n\n");}
 					
-entrada_datos: READ ID	{ printf("READ ID OK \n\n");}
+entrada_datos: READ ID 	{ printf("READ ID OK \n\n");}
 
-salida_datos: PRINT CADENA {printf("PRINT CADENA OK \n\n");}
+salida_datos: PRINT CADENA {printf("PRINT CADENA OK \n\n"); agregarConstante(yylval.str_val,CteString);}
 			| PRINT ID  { printf("PRINT ID OK\n\n");}
 
 bloque_iteracion: REPEAT bloque_programa UNTIL condicion {printf("bloque REPEAT-UNTIL OK\n\n");}

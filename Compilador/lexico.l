@@ -5,8 +5,8 @@
 #include <string.h>
 #include "y.tab.h"
 
-#define LIMITE_REAL 2147483647
-#define LIMITE_ENTERO 32768
+#define LIMITE_REAL 32768.00
+#define LIMITE_ENTERO 2147483647
 #define LIMITE_CADENA 30
 #define LIMITE_ID 30
 
@@ -103,7 +103,8 @@ DEFAULT 				(.)
 							return ENTERO;
 						}
 
-{REAL}					{	if(validarLongitudReal() == 0){
+{REAL}					{		
+								if(validarLongitudReal() == 0){
 								sprintf(mensajeDeError, "El REAL %s excede el rango admitido.", yytext);
 				 				mostrarError(mensajeDeError);
 							}
@@ -141,9 +142,9 @@ int validarLongitudId(){
 }
 
 int validarLongitudReal(){
-	int real;
-	sscanf(yytext,"%lf",&real);
-	if(real >= -LIMITE_REAL && real <= LIMITE_REAL-1){
+	float real;
+	sscanf(yytext,"%f", &real);
+	if(real >= 0.0 && real < LIMITE_REAL){
 		return 1;
 	}
 	return 0;
@@ -152,7 +153,7 @@ int validarLongitudReal(){
 int validarLongitudEntero(){
 	int entero;
 	sscanf(yytext,"%d",&entero);
-	if(entero >= -LIMITE_ENTERO && entero <= LIMITE_ENTERO-1){
+	if(entero >= 0 && entero < LIMITE_ENTERO){
 		return 1;
 	}
 	return 0;
