@@ -16,11 +16,10 @@ void vaciarPila(Pila *pila)
    pila->tope = NULL;
 }
 
-void apilar(Pila *pila, char *v){
+void apilar(Pila *pila, int v){
    /* Crear un nodo nuevo */
    pNodoPila nuevo = (pNodoPila)malloc(sizeof(tipoNodoPila));
-   nuevo->valor = (char*)malloc(sizeof(char)*100);
-   strcpy(nuevo->valor, v);
+   nuevo->valor = v;
 
    if(pila->tope == NULL)
    {
@@ -32,20 +31,22 @@ void apilar(Pila *pila, char *v){
    }
 }
 
-void desapilar(Pila *pila, char *v){
+
+int desapilar(Pila *pila){
 	if(pila->tope == NULL){
-		strcpy(v, "");
+		printf("PILA VACIA!\n");
 		return;
 	}
 	pNodoPila aux;
-	strcpy(v, pila->tope->valor);
+	int res;
+	res = pila->tope->valor;
 	aux = pila->tope;
 	pila->tope = pila->tope->anterior;
 	free(aux);
-
+	return res;
 }
 
-int buscarEnPila(Pila *pila, char *v){
+int buscarEnPila(Pila *pila, int v){
 	if(pila->tope == NULL){
 		return 0;
 	}
@@ -53,7 +54,7 @@ int buscarEnPila(Pila *pila, char *v){
 	aux = pila->tope;
 	while(aux != NULL)
 	{
-		if (strcmp(v, aux->valor) == 0)
+		if (aux->valor == v)
 		{
 			return 1;
 		}

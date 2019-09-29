@@ -1,6 +1,7 @@
 VAR
-[INT,STRING,INT,FLOAT]:[a,berta]					--/Mas tipos de datos que variables/--
+[INT,STRING,INT,FLOAT]:[aaa,berta]					--/Mas tipos de datos que variables/--
 [FLOAT,INT]:[b,var1]
+[INT]:[a]
 [INT,INT,FLOAT,FLOAT]:[c,d,e,cont]
 [INT,INT,FLOAT,FLOAT]:[c,d,e,cont]
 [STRING,INT]:[pepp,jdf,x,y,z]					--/Mas variables que tipos de datos/--
@@ -11,29 +12,9 @@ VAR
 [INT]:[valorentero]
 ENDVAR
 
---/Comentario 13213123123123/--
-REPEAT
-	a:=c;
-	IF(a<b OR 65+12 = c)
-		a:="Hola";
-	ELSE
-		a:="pepe";
-	ENDIF
-UNTIL (a < 4)
-b:=32767.73737373;
-b:= 33/6 -2;
- a:=FILTER( _=33*4 AND _ >= 33/6 -2,[a,pepp,jdf]);
-	pepp:=.99;
-READ c
-PRINT "juancito"
-a:= b + c + 10 * 5 / (4 + a) ;
-
-[c,d,e,cont]:=[34.88 , 6 + 88 /3.55, c,4 ]
-
---/Errores de compilacion mau:=4 variable no declarada @ caracter invalido /--
-
-a:="Hola";
-a:="pepe";
-a:="Hola";
-a:="pepe";
-
+IF(a+3>b-5)
+d:=10;
+IF(a>10)
+c:=15;
+ENDIF
+ENDIF

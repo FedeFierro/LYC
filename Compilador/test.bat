@@ -1,6 +1,6 @@
 flex lexico.l
 bison -dyv sintactico.y
-gcc.exe lex.yy.c y.tab.c -o execute.exe
+gcc.exe lex.yy.c y.tab.c pila.c pila.h -o execute.exe
 pause
 execute.exe prueba.txt
 del lex.yy.c

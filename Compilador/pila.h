@@ -1,8 +1,7 @@
 #include <string.h>
 
-
 typedef struct _nodoP {
-   char *valor;
+   int valor;
    struct _nodoP *anterior;
 } tipoNodoPila;
 
@@ -14,12 +13,10 @@ typedef struct _pila {
 } Pila;
 
 
-
 /* Funciones con pila: */
-void apilar(Pila *p, char *v);
-void desapilar(Pila *p, char *v);
+void apilar(Pila *p, int v);
+int desapilar(Pila *p);
 void mostrarPila(Pila *p);
-int buscarEnPila(Pila *p, char *v);
-
+int buscarEnPila(Pila *p, int v);
 Pila crearPila();
 void vaciarPila(Pila *p);
