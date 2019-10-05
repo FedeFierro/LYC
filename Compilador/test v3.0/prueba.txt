@@ -6,13 +6,12 @@ VAR
 [INT,INT,FLOAT,FLOAT]:[c,d,e,cont]
 [STRING,INT]:[pepp,jdf,x,y,z]					--/Mas variables que tipos de datos/--
 [INT,INT,FLOAT,FLOAT]:[c,d,e,cont]				--/VARIABLES DUPLICADAS --/ COMENTARIO dentro de un comentario/--/--
-[INT]:[Q]
+[INT]:[q]
 [FLOAT,INT]:[b,var1]
 [STRING]:[x]
 [INT]:[valorentero]
 ENDVAR
 
-
 REPEAT
-a:=a+1;
-UNTIL(a>6)
+a:=a+aaa;
+UNTIL(b>2 AND c<3)

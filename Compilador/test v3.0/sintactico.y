@@ -51,6 +51,8 @@
 	void copiarCharEn(char **, char*);
 	int crear_terceto(char*, char*, char*);
 	void escribe_arch_tercetos();
+	char* validaTipo(char* );
+
 
 	int cantidadTokens = 0;
 	int i=0; 
@@ -69,12 +71,21 @@
 	int aux1=0;
 	int aux2=0;
 	char tipoVariableActual[20];
+	char tipoVariable[10];
 
 	char* operadorAux;
 	char idAux[20];
 
 	int yylex();
 	int yyerror();
+	
+	typedef struct{
+		char id[35];
+		char tipo[10];
+	} operacion;
+	
+	operacion vector_operacion[100];
+	int cantOperaciones=0;
 
 	/* --------------- TERCETOS -------------- */
 
@@ -102,7 +113,7 @@
 	Pila pilaTercetoActual;					// para la parte de IF / REPEAT (?)
 	Pila pilaIf;
 	Pila pilaRepeat;
-	
+	Pila pilaOperacion;
 
 
 
@@ -224,7 +235,11 @@ sentencia : asignacion 	{printf("sentencia -> asignacion OK \n\n");}
 | entrada_datos			{printf("sentencia -> entrada_datos OK \n\n");}
 | salida_datos			{printf("sentencia -> salida_datos OK \n\n");}
 
-entrada_datos: READ ID 	{ printf("READ ID OK \n\n");}
+entrada_datos: READ ID 	{ 
+	printf("READ ID OK \n\n");
+
+
+}
 
 salida_datos: PRINT CADENA {printf("PRINT CADENA OK \n\n"); agregarConstante(yylval.str_val,CteString);}
 | PRINT ID  { printf("PRINT ID OK\n\n");}
@@ -232,30 +247,71 @@ salida_datos: PRINT CADENA {printf("PRINT CADENA OK \n\n"); agregarConstante(yyl
 bloque_iteracion: REPEAT {apilar(&pilaRepeat,indice_terceto);}	bloque_programa UNTIL condicion 
 {printf("bloque REPEAT-UNTIL OK\n\n");}
 
-asignacion: ID {strcpy(idAux,yylval.str_val);} OPERADOR_ASIGNACION expresion PUNTO_Y_COMA	{printf("asignacion OK\n\n");
-	E_ind = desapilar(&pilaExpresion);
-	itoa(E_ind,conversionItoA,10);
-	ASIG_ind = crear_terceto("=",idAux,conversionItoA);
+asignacion: ID {strcpy(idAux,yylval.str_val);} OPERADOR_ASIGNACION expresion PUNTO_Y_COMA	
+{
+	printf("asignacion OK\n\n");
+	aux=desapilar(&pilaOperacion);
+	if(strcmp(vector_operacion[aux].tipo,validaTipo(idAux))==0)
+	{E_ind = desapilar(&pilaExpresion);
+		itoa(E_ind,conversionItoA,10);
+		ASIG_ind = crear_terceto("=",idAux,conversionItoA);
+	}
+	else
+	{
+		sprintf(mensajeDeError, "La Variable: %s No es de tipo %s.\n", idAux, vector_operacion[aux].tipo);
+		mostrarError(mensajeDeError);
+	}
 }
 
-
-| ID {strcpy(idAux,yylval.str_val);} OPERADOR_ASIG_STRING CADENA PUNTO_Y_COMA	{printf("asignacion_string -> Cte_String OK \n\n");
-	agregarConstante(yylval.str_val,CteString);		// +++------------------   validar que el ID sea string ------------+++++++++++++++
+| ID {strcpy(idAux,yylval.str_val);
+	strcpy(tipoVariable,validaTipo(idAux));
+} OPERADOR_ASIG_STRING 
+{
+	if(strcmp(tipoVariable,"CADENA")!=0)
+	{sprintf(mensajeDeError, "La Variable: %s No es de tipo CADENA.\n", idAux);
+		mostrarError(mensajeDeError);
+	}
+} 	CADENA PUNTO_Y_COMA	{printf("asignacion_string -> Cte_String OK \n\n");
+	agregarConstante(yylval.str_val,CteString);		
 	crear_terceto("=",idAux,yylval.str_val);
 }
 
-expresion:  expresion OPERACION_SUMA termino	{printf("expresion -> exp + term OK \n\n");
-	itoa(desapilar(&pilaExpresion),bufferaux1,10);
-	itoa(desapilar(&pilaTermino),bufferaux2,10);
-	E_ind = crear_terceto("+",bufferaux1,bufferaux2 );
-	apilar(&pilaExpresion,E_ind);
+expresion:  expresion OPERACION_SUMA termino	
+{printf("expresion -> exp + term OK \n\n");
+	
+	aux=desapilar(&pilaOperacion);
+	aux1=desapilar(&pilaOperacion);
+	if(strcmp(vector_operacion[aux].tipo,vector_operacion[aux1].tipo)==0)
+	{
+		itoa(desapilar(&pilaExpresion),bufferaux1,10);
+		itoa(desapilar(&pilaTermino),bufferaux2,10);
+		E_ind = crear_terceto("+",bufferaux1,bufferaux2 );
+		apilar(&pilaExpresion,E_ind);
+		apilar(&pilaOperacion,aux);
+	}else
+	{	sprintf(mensajeDeError, "Incompatibilidad de tipos de variables en la suma\n");
+		mostrarError(mensajeDeError);
+	}
 
 } 
-| expresion OPERACION_RESTA termino 	{printf("expresion -> exp - term OK \n\n");
+| expresion OPERACION_RESTA termino 	
+{
+printf("expresion -> exp - term OK \n\n");
+aux=desapilar(&pilaOperacion);
+	aux1=desapilar(&pilaOperacion);	
+	if(strcmp(vector_operacion[aux].tipo,vector_operacion[aux1].tipo)==0)
+	{
 	itoa(desapilar(&pilaExpresion),bufferaux1,10);
 	itoa(desapilar(&pilaTermino),bufferaux2,10);
 	E_ind = crear_terceto("-",bufferaux1,bufferaux2 );
 	apilar(&pilaExpresion,E_ind);
+	apilar(&pilaOperacion,aux);
+	}
+	else
+	{
+	sprintf(mensajeDeError, "Incompatibilidad de tipos de variables en la resta\n");
+		mostrarError(mensajeDeError);
+	}
 }
 
 | termino							{printf("expresion -> term OK \n\n");
@@ -263,17 +319,42 @@ expresion:  expresion OPERACION_SUMA termino	{printf("expresion -> exp + term OK
 	apilar(&pilaExpresion,E_ind);
 }
 
-termino:	termino OPERACION_MULTIPLICACION factor {printf("term -> term * factor OK \n\n");
-	itoa(desapilar(&pilaTermino),bufferaux1,10);
-	itoa(desapilar(&pilaFactor),bufferaux2,10);
-	T_ind=crear_terceto("*",bufferaux1,bufferaux2);
-	apilar(&pilaTermino,T_ind);
-} 
-| 			termino OPERACION_DIVISION factor 	{printf("term -> term / factor OK \n\n");
+termino:	termino OPERACION_MULTIPLICACION factor 
+{
+	printf("term -> term * factor OK \n\n");
+	aux=desapilar(&pilaOperacion);
+	aux1=desapilar(&pilaOperacion);
+	if(strcmp(vector_operacion[aux].tipo,vector_operacion[aux1].tipo)==0)
+	{
+		itoa(desapilar(&pilaTermino),bufferaux1,10);
+		itoa(desapilar(&pilaFactor),bufferaux2,10);
+		T_ind=crear_terceto("*",bufferaux1,bufferaux2);
+		apilar(&pilaTermino,T_ind);
+		apilar(&pilaOperacion,aux);
+	} else
+	{
+		sprintf(mensajeDeError, "Incompatibilidad de tipos de variables en la multiplicacion\n");
+		mostrarError(mensajeDeError);
+	}
+}
+| 			termino OPERACION_DIVISION factor 	
+{
+printf("term -> term / factor OK \n\n");
+	aux=desapilar(&pilaOperacion);
+	aux1=desapilar(&pilaOperacion);
+	if(strcmp(vector_operacion[aux].tipo,vector_operacion[aux1].tipo)==0)
+	{
 	itoa(desapilar(&pilaTermino),bufferaux1,10);
 	itoa(desapilar(&pilaFactor),bufferaux2,10);
 	T_ind=crear_terceto("/",bufferaux1,bufferaux2);
 	apilar(&pilaTermino,T_ind);
+	apilar(&pilaOperacion,aux);
+	}
+	else
+	{
+	sprintf(mensajeDeError, "Incompatibilidad de tipos de variables en la division\n");
+		mostrarError(mensajeDeError);
+	}
 }
 
 | factor			{printf("term -> factor OK \n\n");
@@ -283,6 +364,12 @@ termino:	termino OPERACION_MULTIPLICACION factor {printf("term -> term * factor 
 
 factor: ID  {
 	printf("factor -> ID OK\n\n");
+	strcpy(vector_operacion[cantOperaciones].id,yylval.str_val);
+	strcpy(vector_operacion[cantOperaciones].tipo,validaTipo(yylval.str_val));
+	printf("ID %s\n",vector_operacion[cantOperaciones].id);
+	printf("TIPO %s\n",vector_operacion[cantOperaciones].tipo);
+	apilar(&pilaOperacion,cantOperaciones);
+	cantOperaciones++;
 	F_ind = crear_terceto(yylval.str_val,"_","_");
 	apilar(&pilaFactor,F_ind);
 }
@@ -396,7 +483,21 @@ condicion:   PARENTESIS_ABIERTO comparacion PARENTESIS_CERRADO
 	strcpy(vector_tercetos[indice_terceto-1].te1,bufferaux1);
 	
 }
-|	PARENTESIS_ABIERTO comparacion OPERADOR_AND comparacion PARENTESIS_CERRADO
+|	PARENTESIS_ABIERTO comparacion {apilar(&pilaRepeat,aux);} OPERADOR_AND comparacion {apilar(&pilaRepeat,aux);} PARENTESIS_CERRADO 
+{
+	aux=crear_terceto("JMP","_","_");
+	aux2=desapilar(&pilaRepeat);
+	itoa(indice_terceto,bufferaux1,10);		
+	strcpy(vector_tercetos[aux2].te1,bufferaux1);
+	aux2=desapilar(&pilaRepeat);
+	itoa(indice_terceto,bufferaux1,10);		
+	strcpy(vector_tercetos[aux2].te1,bufferaux1);
+	aux2=desapilar(&pilaRepeat);
+	itoa(aux2,bufferaux1,10);		
+	strcpy(vector_tercetos[aux].te1,bufferaux1);
+
+}
+
 |	PARENTESIS_ABIERTO comparacion OPERADOR_OR comparacion PARENTESIS_CERRADO
 | PARENTESIS_ABIERTO OPERADOR_NOT PARENTESIS_ABIERTO condicion PARENTESIS_CERRADO PARENTESIS_CERRADO 
 | PARENTESIS_ABIERTO OPERADOR_NOT PARENTESIS_ABIERTO comparacion PARENTESIS_CERRADO PARENTESIS_CERRADO 
@@ -512,6 +613,7 @@ int main(int argc,char *argv[]){
 		pilaFactor = crearPila();
 		pilaIf = crearPila();
 		pilaRepeat = crearPila();
+		pilaOperacion = crearPila();
 
 		yyparse();
 
@@ -744,4 +846,19 @@ int  crear_terceto(char* p_ope, char* p_te1, char* p_te2)
 	vector_tercetos[indice_terceto] = res;
 	indice_terceto++;
 	return indice_terceto-1;
+}
+
+char* validaTipo(char* id)
+{
+	int i;
+	for(i=0;i<cantidadTokens;i++)
+	{		
+		if(strcmp(id,tablaDeSimbolos[i].nombre)==0)
+		{		
+			return tablaDeSimbolos[i].tipo;
+		}
+	}
+	
+	return id;
+	
 }
