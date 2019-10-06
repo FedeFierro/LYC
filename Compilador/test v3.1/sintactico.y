@@ -572,8 +572,13 @@ condicion:   PARENTESIS_ABIERTO comparacion PARENTESIS_CERRADO
 }
 
 | PARENTESIS_ABIERTO comparacion OPERADOR_OR comparacion PARENTESIS_CERRADO
-| PARENTESIS_ABIERTO OPERADOR_NOT PARENTESIS_ABIERTO condicion PARENTESIS_CERRADO PARENTESIS_CERRADO 
-| PARENTESIS_ABIERTO OPERADOR_NOT PARENTESIS_ABIERTO comparacion PARENTESIS_CERRADO PARENTESIS_CERRADO 
+| PARENTESIS_ABIERTO OPERADOR_NOT PARENTESIS_ABIERTO comparacion PARENTESIS_CERRADO PARENTESIS_CERRADO {
+	
+	invertir_salto(vector_tercetos, aux);
+	aux=desapilar(&pilaRepeat);
+	itoa(aux,bufferaux1,10);							// desapilo y pongo donde voy si la primer condicion es falsa
+	strcpy(vector_tercetos[indice_terceto-1].te1,bufferaux1);
+}
 
 
 comparacion : expresion OPERADOR_MAYOR_A expresion	
@@ -583,7 +588,7 @@ comparacion : expresion OPERADOR_MAYOR_A expresion
 	itoa(ladoIzquierdo,bufferaux1,10);
 	itoa(ladoDerecho,bufferaux2,10);
 	crear_terceto("CMP",bufferaux1,bufferaux2);
-	aux = crear_terceto("JBE","_","_");							// pongo en aux el numero de terceto donde usaria el salto
+	aux = crear_terceto("JA","_","_");							// pongo en aux el numero de terceto donde usaria el salto
 }
 | expresion OPERADOR_MENOR_A expresion
 {
@@ -592,7 +597,7 @@ comparacion : expresion OPERADOR_MAYOR_A expresion
 	itoa(ladoIzquierdo,bufferaux1,10);
 	itoa(ladoDerecho,bufferaux2,10);
 	crear_terceto("CMP",bufferaux1,bufferaux2);
-	aux = crear_terceto("JAE","_","_");		
+	aux = crear_terceto("JNAE","_","_");		
 }
 
 | expresion OPERADOR_MAYOR_O_IGUAL_A expresion
@@ -602,7 +607,7 @@ comparacion : expresion OPERADOR_MAYOR_A expresion
 	itoa(ladoIzquierdo,bufferaux1,10);
 	itoa(ladoDerecho,bufferaux2,10);
 	crear_terceto("CMP",bufferaux1,bufferaux2);
-	aux = crear_terceto("JB","_","_");		
+	aux = crear_terceto("JAE","_","_");		
 }
 
 | expresion OPERADOR_MENOR_O_IGUAL_A expresion
@@ -612,7 +617,7 @@ comparacion : expresion OPERADOR_MAYOR_A expresion
 	itoa(ladoIzquierdo,bufferaux1,10);
 	itoa(ladoDerecho,bufferaux2,10);
 	crear_terceto("CMP",bufferaux1,bufferaux2);
-	aux = crear_terceto("JA","_","_");		
+	aux = crear_terceto("JNA","_","_");		
 }
 
 | expresion OPERADOR_IGUAL_A expresion
@@ -622,7 +627,7 @@ comparacion : expresion OPERADOR_MAYOR_A expresion
 	itoa(ladoIzquierdo,bufferaux1,10);
 	itoa(ladoDerecho,bufferaux2,10);
 	crear_terceto("CMP",bufferaux1,bufferaux2);
-	aux = crear_terceto("JNE","_","_");		
+	aux = crear_terceto("JE","_","_");		
 }
 | expresion OPERADOR_DISTINTO_A expresion
 {
@@ -631,7 +636,7 @@ comparacion : expresion OPERADOR_MAYOR_A expresion
 	itoa(ladoIzquierdo,bufferaux1,10);
 	itoa(ladoDerecho,bufferaux2,10);
 	crear_terceto("CMP",bufferaux1,bufferaux2);
-	aux = crear_terceto("JE","_","_");		
+	aux = crear_terceto("JNE","_","_");		
 }
 
 filtro: FILTER {
