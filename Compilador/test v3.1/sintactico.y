@@ -134,6 +134,20 @@
 	void crear_tercetos_filter();
 	void agregar_variable_filter_a_tabla();
 
+	/* --------------- ASigMultiple -------------- */
+	
+	typedef struct asign_multiple {
+		
+		char valor[10];
+		char nombre[35];
+		char tipo[35];
+		
+	}	asign_multiple;
+
+	asign_multiple  vector_asig_multiple[200]; 		// vector de tercetos
+	int indice_asign_multiple=0;
+	int indice_expresiones_asign_multiple = 0;
+	
 
 	%}
 
@@ -816,7 +830,7 @@ comparacion_filter :
 		}	
 
 
-asignacion_multiple: CORCHETE_ABIERTO lista_ids CORCHETE_CERRADO OPERADOR_ASIGNACION CORCHETE_ABIERTO lista_expresiones CORCHETE_CERRADO 
+asignacion_multiple: CORCHETE_ABIERTO lista_ids_asignMultiple CORCHETE_CERRADO OPERADOR_ASIGNACION CORCHETE_ABIERTO lista_expresiones_asignMultiple CORCHETE_CERRADO 
 {printf("ASIGNACION MULTIPLE OK\n\n");}
 
 lista_expresiones : lista_expresiones COMA expresion_numerica
@@ -964,7 +978,128 @@ lista_ids_filter COMA ID {
 		guardarEnVectorTablaSimbolos(2,yylval.str_val);
 		printf("lista_ids -> ID OK\n\n");
 		crear_tercetos_filter();
-	}		
+	}
+
+////////********Asignacion Multiple *********////////////
+
+lista_ids_asignMultiple: 
+lista_ids_asignMultiple COMA ID {
+
+	printf("%s\n", yylval.str_val);
+	printf("lista_ids_asignMultiple -> lista_ids_asignMultiple , ID OK\n\n");
+	if(strcmp(yylval.str_val,validaTipo(yylval.str_val))==0){
+		//No existe en tabla de simbolo
+		printf("No existe en tabla de simbolo \n\n");
+	}else{
+		
+		strcpy(vector_asig_multiple[indice_asign_multiple].nombre,yylval.str_val);
+		strcpy(vector_asig_multiple[indice_asign_multiple].tipo,validaTipo(yylval.str_val));
+		indice_asign_multiple++;
+		
+	}
+	
+}
+| ID {
+	printf("%s\n", yylval.str_val);
+	printf("lista_ids_asignMultiple -> ID OK\n\n");
+	
+	if(strcmp(yylval.str_val,validaTipo(yylval.str_val))==0){
+		//No existe en tabla de simbolo
+		printf("No existe en tabla de simbolo \n\n");
+	}else{
+		
+		strcpy(vector_asig_multiple[indice_asign_multiple].nombre,yylval.str_val);
+		strcpy(vector_asig_multiple[indice_asign_multiple].tipo,validaTipo(yylval.str_val));
+		indice_asign_multiple++;
+		
+	}	
+}
+
+
+lista_expresiones_asignMultiple : lista_expresiones_asignMultiple COMA expresion_asignMultiple
+| expresion_asignMultiple
+
+
+expresion_asignMultiple: 
+	expresion_asignMultiple OPERACION_SUMA termino_asignMultiple	{
+			printf("expresion_asignMultiple -> exp + term OK \n\n");
+			
+		} 
+	| expresion_asignMultiple OPERACION_RESTA termino_asignMultiple 	{
+			printf("expresion_asignMultiple -> exp - term OK \n\n");
+			
+		}
+| termino_asignMultiple	{
+			printf("expresion_asignMultiple -> term OK \n\n");
+
+		}
+
+termino_asignMultiple: 
+	termino_asignMultiple OPERACION_MULTIPLICACION factor_asignMultiple {
+			printf("term -> term * factor_asignMultiple OK \n\n");
+			
+		} 
+| termino_asignMultiple OPERACION_DIVISION factor_asignMultiple 	{
+			printf("term -> term / factor_asignMultiple OK \n\n");
+			
+		}
+| factor_asignMultiple{
+			printf("term -> factor_asignMultiple OK \n\n");
+			
+		}
+
+factor_asignMultiple: ID 
+| ENTERO {	
+		printf("factor_asignMultiple -> Cte_entera OK\n\n");
+		
+		if(indice_expresiones_asign_multiple < indice_asign_multiple)
+		{
+			
+			if(strcmp(vector_asig_multiple[indice_expresiones_asign_multiple].tipo,"ENTERO") == 0)
+			{	
+				agregarConstante(yylval.str_val,CteInt);
+				strcpy(constanteAux,"_");
+				strcat(constanteAux,yylval.str_val);
+				strcpy(constanteAux + strlen(constanteAux), "\0");
+				crear_terceto("=",vector_asig_multiple[indice_expresiones_asign_multiple].nombre,constanteAux);
+				indice_expresiones_asign_multiple++;
+			}else{
+			
+				sprintf(mensajeDeError, "La Variable: %s No es de tipo entero.\n", vector_asig_multiple[indice_expresiones_asign_multiple].nombre);
+				mostrarError(mensajeDeError);
+			
+			}
+			
+		}
+		
+	}
+| REAL {
+		printf("factor_asignMultiple -> Cte_Real OK\n\n");
+		if(indice_expresiones_asign_multiple < indice_asign_multiple)
+		{
+			
+			if(strcmp(vector_asig_multiple[indice_expresiones_asign_multiple].tipo,"REAL") == 0)
+			{	
+				agregarConstante(yylval.str_val,CteReal);
+				strcpy(constanteAux,"_");
+				strcat(constanteAux,yylval.str_val);
+				strcpy(constanteAux + strlen(constanteAux), "\0");
+				crear_terceto("=",vector_asig_multiple[indice_expresiones_asign_multiple].nombre,constanteAux);
+				indice_expresiones_asign_multiple++;
+			}else{
+			
+				sprintf(mensajeDeError, "La Variable: %s No es de tipo real.\n", vector_asig_multiple[indice_expresiones_asign_multiple].nombre);
+				mostrarError(mensajeDeError);
+			}
+			
+		}
+	}	
+| PARENTESIS_ABIERTO expresion_asignMultiple PARENTESIS_CERRADO {
+		printf("factor_asignMultiple -> (expresion_asignMultiple) OK\n\n");
+	}
+
+
+	
 %%
 
 int main(int argc,char *argv[]){

@@ -17,3 +17,5 @@ REPEAT
 	a:=a+1;
 	
 UNTIL(a>3 OR b <5)
+
+[a,aaa,e]:=[10,20,5.5]
