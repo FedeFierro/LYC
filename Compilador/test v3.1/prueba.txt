@@ -12,9 +12,8 @@ VAR
 [INT]:[valorentero]
 ENDVAR
 
-REPEAT
-a:=a+aaa;
-UNTIL(b>2 AND c<3)
 
+x="hola";
 READ a
+PRINT q
 PRINT b

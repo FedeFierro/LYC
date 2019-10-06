@@ -16,6 +16,7 @@
 	char conversionItoA[20];
 	char bufferaux1[20];
 	char bufferaux2[20];
+	char constanteAux[20];
 
 	/* --------------- CONSTANTES --------------- */
 
@@ -52,7 +53,7 @@
 	int crear_terceto(char*, char*, char*);
 	void escribe_arch_tercetos();
 	char* validaTipo(char* );
-
+	
 
 	int cantidadTokens = 0;
 	int i=0; 
@@ -235,36 +236,40 @@ sentencia : asignacion 	{printf("sentencia -> asignacion OK \n\n");}
 | entrada_datos			{printf("sentencia -> entrada_datos OK \n\n");}
 | salida_datos			{printf("sentencia -> salida_datos OK \n\n");}
 
-entrada_datos: READ ID 	{
+entrada_datos: READ ID 	{ 
 	strcpy(idAux,yylval.str_val);	 
-	
 	if(strcmp(validaTipo(idAux),idAux)!=0)
 	{
-	crear_terceto("READ",idAux,"_");
-	printf("READ ID OK \n\n");
+		crear_terceto("READ",idAux,"_");
+		printf("READ ID OK \n\n");
 	}
 	else{
 		sprintf(mensajeDeError, "La Variable: %s No esta definida", idAux);
-		mostrarError(mensajeDeError);}
-
-
+		mostrarError(mensajeDeError);
+	}
 }
 
 salida_datos: PRINT CADENA { 
-strcpy(idAux,yylval.str_val);
-if(strcmp(validaTipo(idAux),"CADENA")!=0)
+	strcpy(idAux,yylval.str_val);
+	if(strcmp(validaTipo(idAux),"CADENA")!=0)
 	{sprintf(mensajeDeError, "La Variable: %s No es de tipo CADENA.\n", idAux);
 		mostrarError(mensajeDeError);
 	}
-else
-		{printf("PRINT CADENA OK \n\n");
+	else
+	{printf("PRINT CADENA OK \n\n");
 		agregarConstante(yylval.str_val,CteString);
 		crear_terceto("PRINT",idAux,"_");}
 }
-| PRINT ID  {strcpy(idAux,yylval.str_val);
-if(strcmp(validaTipo(idAux),"ENTERO")==0||strcmp(validaTipo(idAux),"REAL")==0){ printf("PRINT ID OK\n\n");crear_terceto("PRINT",idAux,"_");}
-else {sprintf(mensajeDeError, "La Variable: %s No es de tipo numerico.\n", idAux);
-		mostrarError(mensajeDeError);}}
+| PRINT ID  
+{
+	strcpy(idAux,yylval.str_val);
+	if(strcmp(validaTipo(idAux),"ENTERO")==0||strcmp(validaTipo(idAux),"REAL")==0)
+	{ printf("PRINT ID OK\n\n");crear_terceto("PRINT",idAux,"_");}
+	else {
+		sprintf(mensajeDeError, "La Variable: %s No es de tipo numerico.\n", idAux);
+		mostrarError(mensajeDeError);
+		}
+}
 
 bloque_iteracion: REPEAT {apilar(&pilaRepeat,indice_terceto);}	bloque_programa UNTIL condicion 
 {printf("bloque REPEAT-UNTIL OK\n\n");}
@@ -294,8 +299,11 @@ asignacion: ID {strcpy(idAux,yylval.str_val);} OPERADOR_ASIGNACION expresion PUN
 		mostrarError(mensajeDeError);
 	}
 } 	CADENA PUNTO_Y_COMA	{printf("asignacion_string -> Cte_String OK \n\n");
-	agregarConstante(yylval.str_val,CteString);		
-	crear_terceto("=",idAux,yylval.str_val);
+	agregarConstante(yylval.str_val,CteString);
+	strcpy(constanteAux,"_");
+	strcat(constanteAux,yylval.str_val);
+	strcpy(constanteAux + strlen(constanteAux), "\0");
+	crear_terceto("=",idAux,constanteAux);
 }
 
 expresion:  expresion OPERACION_SUMA termino	
@@ -318,20 +326,20 @@ expresion:  expresion OPERACION_SUMA termino
 } 
 | expresion OPERACION_RESTA termino 	
 {
-printf("expresion -> exp - term OK \n\n");
-aux=desapilar(&pilaOperacion);
+	printf("expresion -> exp - term OK \n\n");
+	aux=desapilar(&pilaOperacion);
 	aux1=desapilar(&pilaOperacion);	
 	if(strcmp(vector_operacion[aux].tipo,vector_operacion[aux1].tipo)==0)
 	{
-	itoa(desapilar(&pilaExpresion),bufferaux1,10);
-	itoa(desapilar(&pilaTermino),bufferaux2,10);
-	E_ind = crear_terceto("-",bufferaux1,bufferaux2 );
-	apilar(&pilaExpresion,E_ind);
-	apilar(&pilaOperacion,aux);
+		itoa(desapilar(&pilaExpresion),bufferaux1,10);
+		itoa(desapilar(&pilaTermino),bufferaux2,10);
+		E_ind = crear_terceto("-",bufferaux1,bufferaux2 );
+		apilar(&pilaExpresion,E_ind);
+		apilar(&pilaOperacion,aux);
 	}
 	else
 	{
-	sprintf(mensajeDeError, "Incompatibilidad de tipos de variables en la resta\n");
+		sprintf(mensajeDeError, "Incompatibilidad de tipos de variables en la resta\n");
 		mostrarError(mensajeDeError);
 	}
 }
@@ -361,20 +369,20 @@ termino:	termino OPERACION_MULTIPLICACION factor
 }
 | 			termino OPERACION_DIVISION factor 	
 {
-printf("term -> term / factor OK \n\n");
+	printf("term -> term / factor OK \n\n");
 	aux=desapilar(&pilaOperacion);
 	aux1=desapilar(&pilaOperacion);
 	if(strcmp(vector_operacion[aux].tipo,vector_operacion[aux1].tipo)==0)
 	{
-	itoa(desapilar(&pilaTermino),bufferaux1,10);
-	itoa(desapilar(&pilaFactor),bufferaux2,10);
-	T_ind=crear_terceto("/",bufferaux1,bufferaux2);
-	apilar(&pilaTermino,T_ind);
-	apilar(&pilaOperacion,aux);
+		itoa(desapilar(&pilaTermino),bufferaux1,10);
+		itoa(desapilar(&pilaFactor),bufferaux2,10);
+		T_ind=crear_terceto("/",bufferaux1,bufferaux2);
+		apilar(&pilaTermino,T_ind);
+		apilar(&pilaOperacion,aux);
 	}
 	else
 	{
-	sprintf(mensajeDeError, "Incompatibilidad de tipos de variables en la division\n");
+		sprintf(mensajeDeError, "Incompatibilidad de tipos de variables en la division\n");
 		mostrarError(mensajeDeError);
 	}
 }
@@ -398,11 +406,29 @@ factor: ID  {
 
 | ENTERO 	{
 	printf("factor -> Cte_entera OK\n\n");agregarConstante(yylval.str_val,CteInt);
-	F_ind = crear_terceto(yylval.str_val,"_","_");
+	strcpy(constanteAux,"_");
+	strcat(constanteAux,yylval.str_val);
+	strcpy(constanteAux + strlen(constanteAux), "\0");
+	strcpy(vector_operacion[cantOperaciones].id,constanteAux);
+	strcpy(vector_operacion[cantOperaciones].tipo,"ENTERO");
+	printf("ID %s\n",vector_operacion[cantOperaciones].id);
+	printf("TIPO %s\n",vector_operacion[cantOperaciones].tipo);
+	apilar(&pilaOperacion,cantOperaciones);
+	cantOperaciones++;
+	F_ind = crear_terceto(constanteAux,"_","_");
 	apilar(&pilaFactor,F_ind);
 }
 | REAL		{printf("factor -> Cte_Real OK\n\n");agregarConstante(yylval.str_val,CteReal);
-	F_ind = crear_terceto(yylval.str_val,"_","_");
+	strcpy(constanteAux,"_");
+	strcat(constanteAux,yylval.str_val);
+	strcpy(constanteAux + strlen(constanteAux), "\0");
+	strcpy(vector_operacion[cantOperaciones].id,constanteAux);
+	strcpy(vector_operacion[cantOperaciones].tipo,"REAL");
+	printf("ID %s\n",vector_operacion[cantOperaciones].id);
+	printf("TIPO %s\n",vector_operacion[cantOperaciones].tipo);
+	apilar(&pilaOperacion,cantOperaciones);
+	cantOperaciones++;
+	F_ind = crear_terceto(constanteAux,"_","_");
 	apilar(&pilaFactor,F_ind);
 }	
 
@@ -838,26 +864,21 @@ void escribe_arch_tercetos()
 	for(i = 0; i < indice_terceto; i++)
 	{
 		aux =  vector_tercetos[i];
-		if(strcmp(aux.ope,"READ")==0 || strcmp(aux.ope,"PRINT")==0) //para los tercetos que son print o read no agregue corchetes al primer operador
-		{fprintf(arch, "[%d] (%s,%s,%s)\n", aux.nroTerceto, aux.ope,aux.te1, aux.te2 );}
-		
-		else{
-		
-		if(strcmp(aux.te1,"_")==0)					// si el primer operando es un guion bajo , grabo como esta
+		if((strcmp(aux.te1,"_")==0 && strcmp(aux.te2,"_")==0) || (strcmp(aux.ope,"READ")==0 || strcmp(aux.ope,"PRINT")==0))					// si el primer y segundo operando es un guion bajo , grabo como esta
 		fprintf(arch, "[%d] (%s,%s,%s)\n", aux.nroTerceto, aux.ope,aux.te1, aux.te2 );
 		else
 		{	if(strcmp(aux.te2,"_")==0)					// si el segundo operando es un guion bajo, es un terceto JMP
 			fprintf(arch, "[%d] (%s,[%s],%s)\n", aux.nroTerceto, aux.ope,aux.te1, aux.te2 );
 			else
 			{
-				if(*aux.te1>='a' && *aux.te1<='z')			// si el primer operando es una letra, puede que sea una asignacion o similar, pongo corchetes en el 2do operando
+				if(*aux.te1>='a' && *aux.te1<='z')			// si el primer operando son una letra, puede que sea una asignacion de una cadena, grabo como esta
 				fprintf(arch, "[%d] (%s,%s,[%s])\n", aux.nroTerceto, aux.ope,aux.te1, aux.te2 );
 				else
 				fprintf(arch, "[%d] (%s,[%s],[%s])\n", aux.nroTerceto, aux.ope,aux.te1, aux.te2 );				// sino, los dos operandos son otros tercetos, pongo corchetes a los dos
 			}
 
 		}
-		}
+
 	}
 	fclose(arch);
 }
