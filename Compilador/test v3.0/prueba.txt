@@ -15,3 +15,6 @@ ENDVAR
 REPEAT
 a:=a+aaa;
 UNTIL(b>2 AND c<3)
+
+READ a
+PRINT b

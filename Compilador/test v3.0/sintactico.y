@@ -235,14 +235,36 @@ sentencia : asignacion 	{printf("sentencia -> asignacion OK \n\n");}
 | entrada_datos			{printf("sentencia -> entrada_datos OK \n\n");}
 | salida_datos			{printf("sentencia -> salida_datos OK \n\n");}
 
-entrada_datos: READ ID 	{ 
+entrada_datos: READ ID 	{
+	strcpy(idAux,yylval.str_val);	 
+	
+	if(strcmp(validaTipo(idAux),idAux)!=0)
+	{
+	crear_terceto("READ",idAux,"_");
 	printf("READ ID OK \n\n");
+	}
+	else{
+		sprintf(mensajeDeError, "La Variable: %s No esta definida", idAux);
+		mostrarError(mensajeDeError);}
 
 
 }
 
-salida_datos: PRINT CADENA {printf("PRINT CADENA OK \n\n"); agregarConstante(yylval.str_val,CteString);}
-| PRINT ID  { printf("PRINT ID OK\n\n");}
+salida_datos: PRINT CADENA { 
+strcpy(idAux,yylval.str_val);
+if(strcmp(validaTipo(idAux),"CADENA")!=0)
+	{sprintf(mensajeDeError, "La Variable: %s No es de tipo CADENA.\n", idAux);
+		mostrarError(mensajeDeError);
+	}
+else
+		{printf("PRINT CADENA OK \n\n");
+		agregarConstante(yylval.str_val,CteString);
+		crear_terceto("PRINT",idAux,"_");}
+}
+| PRINT ID  {strcpy(idAux,yylval.str_val);
+if(strcmp(validaTipo(idAux),"ENTERO")==0||strcmp(validaTipo(idAux),"REAL")==0){ printf("PRINT ID OK\n\n");crear_terceto("PRINT",idAux,"_");}
+else {sprintf(mensajeDeError, "La Variable: %s No es de tipo numerico.\n", idAux);
+		mostrarError(mensajeDeError);}}
 
 bloque_iteracion: REPEAT {apilar(&pilaRepeat,indice_terceto);}	bloque_programa UNTIL condicion 
 {printf("bloque REPEAT-UNTIL OK\n\n");}
@@ -816,6 +838,11 @@ void escribe_arch_tercetos()
 	for(i = 0; i < indice_terceto; i++)
 	{
 		aux =  vector_tercetos[i];
+		if(strcmp(aux.ope,"READ")==0 || strcmp(aux.ope,"PRINT")==0) //para los tercetos que son print o read no agregue corchetes al primer operador
+		{fprintf(arch, "[%d] (%s,%s,%s)\n", aux.nroTerceto, aux.ope,aux.te1, aux.te2 );}
+		
+		else{
+		
 		if(strcmp(aux.te1,"_")==0)					// si el primer operando es un guion bajo , grabo como esta
 		fprintf(arch, "[%d] (%s,%s,%s)\n", aux.nroTerceto, aux.ope,aux.te1, aux.te2 );
 		else
@@ -830,7 +857,7 @@ void escribe_arch_tercetos()
 			}
 
 		}
-
+		}
 	}
 	fclose(arch);
 }
