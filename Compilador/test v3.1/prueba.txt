@@ -17,3 +17,9 @@ x="hola";
 READ a
 PRINT q
 PRINT b
+
+a:=FILTER(_>3 ,[a,var1,c,d]);
+a:=FILTER(NOT (_>7) ,[a,var1,c,d]);
+
+a:=FILTER( _> 3 AND _ <= 88 ,[a,var1,c,d]);
+a:=FILTER(_>7 OR _== 3 ,[a,var1,c,d]);
