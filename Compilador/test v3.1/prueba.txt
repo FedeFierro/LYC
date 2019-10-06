@@ -12,8 +12,8 @@ VAR
 [INT]:[valorentero]
 ENDVAR
 
-a:=7;
+
 REPEAT
 	a:=a+1;
 	
-UNTIL(NOT(a>10))
+UNTIL(a>3 OR b <5)

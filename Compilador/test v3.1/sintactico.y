@@ -109,6 +109,7 @@
 	int E_ind=0;
 	int ASIG_ind=0;
 	int aux=0;
+	int auxRepeat=0;
 	
 	Pila pilaExpresion;
 	Pila pilaTermino;
@@ -287,7 +288,8 @@ salida_datos: PRINT CADENA {
 		}
 }
 
-bloque_iteracion: REPEAT {apilar(&pilaRepeat,indice_terceto);}	bloque_programa UNTIL condicion 
+bloque_iteracion: REPEAT {apilar(&pilaRepeat,indice_terceto);
+							 auxRepeat=indice_terceto;}	bloque_programa UNTIL condicion 
 {printf("bloque REPEAT-UNTIL OK\n\n");}
 
 asignacion: ID {strcpy(idAux,yylval.str_val);} OPERADOR_ASIGNACION expresion PUNTO_Y_COMA	
@@ -571,7 +573,26 @@ condicion:   PARENTESIS_ABIERTO comparacion PARENTESIS_CERRADO
 
 }
 
-| PARENTESIS_ABIERTO comparacion OPERADOR_OR comparacion PARENTESIS_CERRADO
+| PARENTESIS_ABIERTO comparacion {
+		apilar(&pilaRepeat,aux);
+		char posInicial[10];
+		itoa(auxRepeat, posInicial,10);
+		aux=crear_terceto("JMP",posInicial,"_");
+	}OPERADOR_OR comparacion {apilar(&pilaRepeat,aux);} PARENTESIS_CERRADO {
+			
+			char posInicial[10];
+			itoa(auxRepeat, posInicial,10);
+			aux=crear_terceto("JMP",posInicial,"_");
+			
+			aux2=desapilar(&pilaRepeat);
+			printf("aux2: %d\n",aux);
+			itoa(indice_terceto,bufferaux1,10);		
+			strcpy(vector_tercetos[aux2].te1,bufferaux1);
+			aux2=desapilar(&pilaRepeat);
+			itoa(aux2+2,bufferaux1,10);		
+			strcpy(vector_tercetos[aux2].te1,bufferaux1);
+
+}
 | PARENTESIS_ABIERTO OPERADOR_NOT PARENTESIS_ABIERTO comparacion PARENTESIS_CERRADO PARENTESIS_CERRADO {
 	
 	invertir_salto(vector_tercetos, aux);

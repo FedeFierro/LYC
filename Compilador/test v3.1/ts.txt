@@ -14,6 +14,6 @@ jdf                           ENTERO                                            
 q                             ENTERO                                            0    
 x                             CADENA                                            0    
 valorentero                   ENTERO                                            0    
-_7                            CTE_INT             7                             0    
 _1                            CTE_INT             1                             0    
-_10                           CTE_INT             10                            0    
+_3                            CTE_INT             3                             0    
+_5                            CTE_INT             5                             0    
