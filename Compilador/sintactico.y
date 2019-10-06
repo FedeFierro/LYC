@@ -23,6 +23,8 @@
 #define CteString "CTE_STRING"
 #define CteInt "CTE_INT"
 #define CteReal "CTE_REAL"
+#define VAR_FILTER "@Filter"
+#define TIPO_FILTER "REAL"
 
 	/* --------------- TABLA DE SIMBOLOS --------------- */
 
@@ -100,6 +102,19 @@
 	Pila pilaFactor;
 	Pila pilaTercetoActual;					// para la parte de IF / REPEAT (?)
 	Pila pilaIf;
+	Pila pilaFilter;
+	
+	/* --------------- FILTER -------------- */
+	int cont_filter=0;
+	terceto vector_filter[4];			// vector de tercetos para filter 	
+	terceto vector_condicion_filter[2];	// vector de tercetos para condicion de filter
+	int condicion_filter_doble=0;	// para saber si es una condicion doble;
+	int condicion_filter_or=0;		//para saber si la condicion es con or;
+	/* ---- FUNCIONES FILTER -------------*/
+	void invertir_salto(terceto* vector, int indice);
+	void crear_tercetos_filter();
+	void agregar_variable_filter_a_tabla();
+
 	%}
 
 %union {
@@ -291,7 +306,10 @@ factor: ID  {
 	apilar(&pilaFactor,F_ind);
 }
 
-| filtro {printf("factor -> filtro OK\n\n");}
+| filtro {printf("factor -> filtro OK\n\n");
+	F_ind = crear_terceto(VAR_FILTER,"_","_");
+	apilar(&pilaFactor,F_ind);
+	}
 
 bloque_condicional: bloque_if {printf("bloque_condicional OK\n\n\n");}
 
@@ -327,20 +345,117 @@ comparacion : expresion OPERADOR_MAYOR_A expresion
 | expresion OPERADOR_IGUAL_A expresion
 | expresion OPERADOR_DISTINTO_A expresion
 
-filtro: FILTER PARENTESIS_ABIERTO condicion_filter COMA  CORCHETE_ABIERTO lista_ids CORCHETE_CERRADO PARENTESIS_CERRADO 
-{printf("FILTER OK\n\n");}
+filtro: FILTER {
+			condicion_filter_doble=0; 
+			condicion_filter_or=0; 
+			cont_filter=0;
+			agregar_variable_filter_a_tabla();
+			agregarConstante("0", CteInt);
+			} 
+		PARENTESIS_ABIERTO condicion_filter COMA  CORCHETE_ABIERTO lista_ids_filter CORCHETE_CERRADO PARENTESIS_CERRADO 
+			{
+				printf("FILTER OK\n\n");
+				crear_terceto("=",VAR_FILTER,"0"); //valor por default si nunguna cumple la condicion sale por este
+				int i=0;
+				int filter_i;
+				itoa(indice_terceto,bufferaux1,10);
+				for(i=0; i< cont_filter; i++){
+					filter_i=desapilar(&pilaFilter);
+					strcpy(vector_tercetos[filter_i].te1,bufferaux1);
+				}
 
-condicion_filter: comparacion_filter OPERADOR_AND comparacion_filter 
-| comparacion_filter OPERADOR_OR comparacion_filter
-| OPERADOR_NOT PARENTESIS_ABIERTO comparacion_filter PARENTESIS_CERRADO
-| comparacion_filter
+			}
 
-comparacion_filter : GUION_BAJO OPERADOR_MAYOR_A expresion_numerica	
-| GUION_BAJO OPERADOR_MENOR_A expresion_numerica
-| GUION_BAJO OPERADOR_MAYOR_O_IGUAL_A expresion_numerica
-| GUION_BAJO OPERADOR_MENOR_O_IGUAL_A expresion_numerica
-| GUION_BAJO OPERADOR_IGUAL_A expresion_numerica
-| GUION_BAJO OPERADOR_DISTINTO_A expresion_numerica
+condicion_filter: comparacion_filter{ 
+	vector_filter[0] = vector_condicion_filter[0];
+	vector_filter[1] = vector_condicion_filter[1];} OPERADOR_AND comparacion_filter { 
+	vector_filter[2] = vector_condicion_filter[0];
+	vector_filter[3] = vector_condicion_filter[1]; 
+	condicion_filter_doble=1;
+	}
+
+| comparacion_filter { 
+		vector_filter[0] = vector_condicion_filter[0];
+		invertir_salto(vector_condicion_filter,1);
+		vector_filter[1] = vector_condicion_filter[1];} OPERADOR_OR comparacion_filter { 
+		vector_filter[2] = vector_condicion_filter[0];
+		vector_filter[3] = vector_condicion_filter[1]; 
+		condicion_filter_doble=1;
+		condicion_filter_or=1;
+	}
+
+| OPERADOR_NOT PARENTESIS_ABIERTO comparacion_filter PARENTESIS_CERRADO{
+		vector_filter[0] = vector_condicion_filter[0];
+		invertir_salto(vector_condicion_filter, 1);
+		vector_filter[1] = vector_condicion_filter[1];
+  
+	}
+| comparacion_filter {
+		vector_filter[0] = vector_condicion_filter[0];
+		vector_filter[1] = vector_condicion_filter[1];
+	}
+
+comparacion_filter : 
+	GUION_BAJO OPERADOR_MAYOR_A expresion_numerica {
+			ladoDerecho = desapilar(&pilaExpresion);
+			itoa(ladoDerecho,bufferaux1,10);
+			terceto aux;
+			strcpy(aux.ope,"CMP");
+			strcpy(aux.te2,bufferaux1);
+			vector_condicion_filter[0]= aux;
+			strcpy(aux.ope,"JA");
+			vector_condicion_filter[1]= aux;
+		}	
+	| GUION_BAJO OPERADOR_MENOR_A expresion_numerica{
+			ladoDerecho = desapilar(&pilaExpresion);
+			itoa(ladoDerecho,bufferaux1,10);
+			terceto aux;
+			strcpy(aux.ope,"CMP");
+			strcpy(aux.te2,bufferaux1);
+			vector_condicion_filter[0]= aux;
+			strcpy(aux.ope,"JNAE");
+			vector_condicion_filter[1]= aux;
+		}	
+| GUION_BAJO OPERADOR_MAYOR_O_IGUAL_A expresion_numerica{
+			ladoDerecho = desapilar(&pilaExpresion);
+			itoa(ladoDerecho,bufferaux1,10);
+			terceto aux;
+			strcpy(aux.ope,"CMP");
+			strcpy(aux.te2,bufferaux1);
+			vector_condicion_filter[0]= aux;
+			strcpy(aux.ope,"JAE");
+			vector_condicion_filter[1]= aux;
+		}	
+| GUION_BAJO OPERADOR_MENOR_O_IGUAL_A expresion_numerica{
+			ladoDerecho = desapilar(&pilaExpresion);
+			itoa(ladoDerecho,bufferaux1,10);
+			terceto aux;
+			strcpy(aux.ope,"CMP");
+			strcpy(aux.te2,bufferaux1);
+			vector_condicion_filter[0]= aux;
+			strcpy(aux.ope,"JNA");
+			vector_condicion_filter[1]= aux;
+		}	
+| GUION_BAJO OPERADOR_IGUAL_A expresion_numerica{
+			ladoDerecho = desapilar(&pilaExpresion);
+			itoa(ladoDerecho,bufferaux1,10);
+			terceto aux;
+			strcpy(aux.ope,"CMP");
+			strcpy(aux.te2,bufferaux1);
+			vector_condicion_filter[0]= aux;
+			strcpy(aux.ope,"JE");
+			vector_condicion_filter[1]= aux;
+		}	
+| GUION_BAJO OPERADOR_DISTINTO_A expresion_numerica{
+			ladoDerecho = desapilar(&pilaExpresion);
+			itoa(ladoDerecho,bufferaux1,10);
+			terceto aux;
+			strcpy(aux.ope,"CMP");
+			strcpy(aux.te2,bufferaux1);
+			vector_condicion_filter[0]= aux;
+			strcpy(aux.ope,"JNE");
+			vector_condicion_filter[1]= aux;
+		}	
 
 
 asignacion_multiple: CORCHETE_ABIERTO lista_ids CORCHETE_CERRADO OPERADOR_ASIGNACION CORCHETE_ABIERTO lista_expresiones CORCHETE_CERRADO 
@@ -350,19 +465,79 @@ lista_expresiones : lista_expresiones COMA expresion_numerica
 | expresion_numerica
 
 
-expresion_numerica: expresion_numerica OPERACION_SUMA termino_numerico	{printf("expresion_numerica -> exp + term OK \n\n");} 
-| expresion_numerica OPERACION_RESTA termino_numerico 	{printf("expresion_numerica -> exp - term OK \n\n");}
-| termino_numerico							{printf("expresion_numerica -> term OK \n\n");}
+expresion_numerica: 
+	expresion_numerica OPERACION_SUMA termino_numerico	{
+			printf("expresion_numerica -> exp + term OK \n\n");
+			itoa(desapilar(&pilaExpresion),bufferaux1,10);
+			itoa(desapilar(&pilaTermino),bufferaux2,10);
+			E_ind = crear_terceto("+",bufferaux1,bufferaux2 );
+			apilar(&pilaExpresion,E_ind);
+		} 
+	| expresion_numerica OPERACION_RESTA termino_numerico 	{
+			printf("expresion_numerica -> exp - term OK \n\n");
+			itoa(desapilar(&pilaExpresion),bufferaux1,10);
+			itoa(desapilar(&pilaTermino),bufferaux2,10);
+			E_ind = crear_terceto("-",bufferaux1,bufferaux2 );
+			apilar(&pilaExpresion,E_ind);
+		}
+| termino_numerico	{
+			printf("expresion_numerica -> term OK \n\n");
+			E_ind = desapilar(&pilaTermino);
+			apilar(&pilaExpresion,E_ind);
+		}
 
-termino_numerico: termino_numerico OPERACION_MULTIPLICACION factor_numerico {printf("term -> term * factor_numerico OK \n\n");} 
-| termino_numerico OPERACION_DIVISION factor_numerico 	{printf("term -> term / factor_numerico OK \n\n");}
-| factor_numerico			{printf("term -> factor_numerico OK \n\n");}
+termino_numerico: 
+	termino_numerico OPERACION_MULTIPLICACION factor_numerico {
+			printf("term -> term * factor_numerico OK \n\n");
+			itoa(desapilar(&pilaTermino),bufferaux1,10);
+			itoa(desapilar(&pilaFactor),bufferaux2,10);
+			T_ind=crear_terceto("*",bufferaux1,bufferaux2);
+			apilar(&pilaTermino,T_ind);
+		} 
+| termino_numerico OPERACION_DIVISION factor_numerico 	{
+			printf("term -> term / factor_numerico OK \n\n");
+			itoa(desapilar(&pilaTermino),bufferaux1,10);
+			itoa(desapilar(&pilaFactor),bufferaux2,10);
+			T_ind=crear_terceto("/",bufferaux1,bufferaux2);
+			apilar(&pilaTermino,T_ind);
+		}
+| factor_numerico{
+			printf("term -> factor_numerico OK \n\n");
+			T_ind = desapilar(&pilaFactor);
+			apilar(&pilaTermino,T_ind);
+		}
 
 factor_numerico: ID 
-| ENTERO {	agregarConstante(yylval.str_val, CteInt);}
-| REAL {	agregarConstante(yylval.str_val, CteReal);}	
-| PARENTESIS_ABIERTO expresion_numerica PARENTESIS_CERRADO
-| filtro
+| ENTERO {	
+		printf("factor numerico -> Cte_entera OK\n\n");
+		agregarConstante(yylval.str_val, CteInt);
+		F_ind = crear_terceto(yylval.str_val,"_","_");
+		apilar(&pilaFactor,F_ind);
+	}
+| REAL {
+		printf("factor numerico -> Cte_Real OK\n\n");
+		agregarConstante(yylval.str_val, CteReal);
+		F_ind = crear_terceto(yylval.str_val,"_","_");
+		apilar(&pilaFactor,F_ind);
+	}	
+| PARENTESIS_ABIERTO expresion_numerica PARENTESIS_CERRADO {
+		printf("factor numerico -> (expresion numerica) OK\n\n");
+		F_ind = desapilar(&pilaExpresion);
+		apilar(&pilaFactor,F_ind);
+	}
+lista_ids_filter: 
+lista_ids_filter COMA ID {
+		printf("%s\n", yylval.str_val);
+		guardarEnVectorTablaSimbolos(2,yylval.str_val);
+		printf("lista_ids -> lista_ids , ID OK\n\n");
+		crear_tercetos_filter();
+	}
+| ID {
+		printf("%s\n", yylval.str_val);
+		guardarEnVectorTablaSimbolos(2,yylval.str_val);
+		printf("lista_ids -> ID OK\n\n");
+		crear_tercetos_filter();
+	}	
 
 %%
 
@@ -378,6 +553,7 @@ int main(int argc,char *argv[]){
 		pilaTercetoActual = crearPila();
 		pilaFactor = crearPila();
 		pilaIf = crearPila();
+		pilaFilter = crearPila();
 		
 		yyparse();
 		
@@ -610,4 +786,71 @@ int  crear_terceto(char* p_ope, char* p_te1, char* p_te2)
 	vector_tercetos[indice_terceto] = res;
 	indice_terceto++;
 	return indice_terceto-1;
+}
+void invertir_salto(terceto* vector, int indice){
+	
+	printf("invertir el salto: %s\n", vector[indice].ope);
+	if(strcmp(vector[indice].ope,"JE")==0){
+		strcpy(vector[indice].ope,"JNE");
+		return;
+	}
+	if(strcmp(vector[indice].ope,"JNE")==0){
+		strcpy(vector[indice].ope,"JE");
+		return;
+	}
+	if(strcmp(vector[indice].ope,"JNAE")==0){
+		strcpy(vector[indice].ope,"JAE");
+		return;
+	}
+	if(strcmp(vector[indice].ope,"JAE")==0){
+		strcpy(vector[indice].ope,"JNAE");
+		return;
+	}
+	if(strcmp(vector[indice].ope,"JA")==0){
+		strcpy(vector[indice].ope,"JNA");
+		return;
+	}
+	if(strcmp(vector[indice].ope,"JNA")==0){
+		strcpy(vector[indice].ope,"JA");
+		return;
+	}
+}
+void crear_tercetos_filter(){
+	int i = 0;
+	int lenght = (int) sizeof(vector_filter);
+	
+	for(i=0; i<lenght; i++){
+		terceto aux = vector_filter[i];
+		if(i==0 || (condicion_filter_doble ==1 && i==2)){
+			crear_terceto(aux.ope,yylval.str_val,aux.te2);
+		}
+		if(i==1){
+			if(condicion_filter_doble==1 && condicion_filter_or ==0){
+				itoa(indice_terceto+5, bufferaux1,10);
+			}
+			else{
+				itoa(indice_terceto+3, bufferaux1,10);
+			}
+			crear_terceto(aux.ope,bufferaux1,"_");
+		}
+		if(condicion_filter_doble==1 && i==3){
+			itoa(indice_terceto+3, bufferaux1,10);
+			crear_terceto(aux.ope,bufferaux1,"_");
+		}
+		
+	}
+	crear_terceto("=",VAR_FILTER,yylval.str_val);
+	cont_filter++;
+	apilar(&pilaFilter,crear_terceto("JMP","","_"));
+}
+void agregar_variable_filter_a_tabla(){
+	if (buscarCte(VAR_FILTER, TIPO_FILTER) == 0) {
+
+		// Agrego nombre a la tabla
+		strcpy(tablaDeSimbolos[cant_ctes].nombre, VAR_FILTER);
+
+		// Agrego el tipo (Se utiliza para imprimir tabla)
+		strcpy(tablaDeSimbolos[cant_ctes].tipo, TIPO_FILTER);
+		cant_ctes++;
+	}
 }
