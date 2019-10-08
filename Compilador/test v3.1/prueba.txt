@@ -15,7 +15,17 @@ ENDVAR
 
 REPEAT
 	a:=a+1;
-	
+	b:=12.3+11.5-3.8;
+	IF(a<var1)
+		cont :=37.5;
+	ENDIF
 UNTIL(a>3 OR b <5)
 
 [a,aaa,e]:=[10,20,5.5]
+
+
+a:=FILTER(_>3 ,[a,var1,c,d]);
+a:=FILTER(NOT (_>7) ,[a,var1,c,d]);
+
+a:=FILTER( _> 3 AND _ <= 88 ,[a,var1,c,d]);
+a:=FILTER(_>7 OR _ == 3 ,[a,var1,c,d]);
