@@ -24,6 +24,9 @@ MAXTEXTSIZE equ 50
     a   dd  ?
     b   dd  ?
     re  dd  ?
+    res_1         db  "Es Verdadero",'$', 4 dup (?)
+    res_2           db  "Es Falso",'$', 4 dup (?)
+    res_3           db  "Fin comparacion",'$', 4 dup (?)
 
 .CODE
 
@@ -125,6 +128,22 @@ START:
     ffree
         
     DisplayFloat re,1
+    newLine 1
+    fld re
+    fld b
+    fcomp
+    fstsw ax
+    sahf
+  
+    JNA ET_100
+    DisplayString res_1
+    newLine 1
+    JMP ET_101
+ET_100:
+    DisplayString res_2
+    newLine 1
+ET_101:
+    DisplayString res_3
     newLine 1
     
     mov dx,OFFSET T_Ingrese_un_numero
