@@ -12,6 +12,9 @@ VAR
 [INT]:[valorentero]
 ENDVAR
 
+pepp="Hola";
+
+PRINT "ProgamaLyC"
 
 REPEAT
 	a:=a+1;
@@ -21,8 +24,14 @@ REPEAT
 	ENDIF
 UNTIL(a>3 OR b <5)
 
+IF IF (a+c ==d) THEN
+	a:=33;
+ELSE
+	a:=35;
+ENDIF
 [a,aaa,e]:=[10,20,5.5]
 
+READ cont
 
 a:=FILTER(_>3 ,[a,var1,c,d]);
 a:=FILTER(NOT (_>7) ,[a,var1,c,d]);

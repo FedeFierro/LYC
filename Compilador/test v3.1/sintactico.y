@@ -282,13 +282,14 @@ entrada_datos: READ ID 	{
 
 salida_datos: PRINT CADENA { 
 	strcpy(idAux,yylval.str_val);
-	if(strcmp(validaTipo(idAux),"CADENA")!=0)
+	agregarConstante(yylval.str_val,CteString);
+	if(strcmp(validaTipo(idAux),"CteString")!=0)
 	{sprintf(mensajeDeError, "La Variable: %s No es de tipo CADENA.\n", idAux);
 		mostrarError(mensajeDeError);
 	}
 	else
 	{printf("PRINT CADENA OK \n\n");
-		agregarConstante(yylval.str_val,CteString);
+		
 		crear_terceto("PRINT",idAux,"_");}
 }
 | PRINT ID  

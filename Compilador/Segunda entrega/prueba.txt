@@ -12,6 +12,7 @@ VAR
 [INT]:[valorentero]
 ENDVAR
 
+pepp:=56;
 
 REPEAT
 	a:=a+1;

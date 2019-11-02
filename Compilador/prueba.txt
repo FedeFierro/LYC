@@ -12,15 +12,7 @@ VAR
 [INT]:[valorentero]
 ENDVAR
 
-IF(a+3>b-5)
-d:=10;
-IF(a>10)
-c:=15;
-ENDIF
-ENDIF
-
-a:=FILTER(_>3 ,[a,b,c,d]);
-a:=FILTER(NOT (_>7) ,[a,b,c,d]);
-
-a:=FILTER( _> 3 AND _ <= 88 ,[a,b,c,d]);
-a:=FILTER(_>7 OR _ = 3 ,[a,b,c,d]);
+PRINT "Programa LYC"
+PRINT a
+READ b
+a:= "Hola";

@@ -25,6 +25,9 @@
 #define CteReal "CTE_REAL"
 #define VAR_FILTER "@Filter"
 #define TIPO_FILTER "REAL"
+#define T_REAL 1
+#define T_ENTERO 2
+#define T_CADENA 3
 
 	/* --------------- TABLA DE SIMBOLOS --------------- */
 
@@ -53,6 +56,10 @@
 	void copiarCharEn(char **, char*);
 	int crear_terceto(char*, char*, char*);
 	void escribe_arch_tercetos();
+	int buscar_tipo_variable(char *);
+	void formatear_num_terceto(int numero, char *salida);
+	void nombre_constante(char*,char*);
+	void buscar_tipo_por_numero(int numero, char* tipo);
 
 	int cantidadTokens = 0;
 	int i=0; 
@@ -96,6 +103,11 @@
 	int E_ind=0;
 	int ASIG_ind=0;
 	int aux=0;
+	int tipo=0;
+	int tipoFactor=0;
+	int tipoTermino=0;
+	int tipoExpresion=0;
+	int tipoIdAsignacion=0;
 
 	Pila pilaExpresion;
 	Pila pilaTermino;
@@ -103,6 +115,7 @@
 	Pila pilaTercetoActual;					// para la parte de IF / REPEAT (?)
 	Pila pilaIf;
 	Pila pilaFilter;
+	Pila pilaTipo;
 	
 	/* --------------- FILTER -------------- */
 	int cont_filter=0;
@@ -232,83 +245,186 @@ sentencia : asignacion 	{printf("sentencia -> asignacion OK \n\n");}
 | entrada_datos			{printf("sentencia -> entrada_datos OK \n\n");}
 | salida_datos			{printf("sentencia -> salida_datos OK \n\n");}
 
-entrada_datos: READ ID 	{ printf("READ ID OK \n\n");}
+entrada_datos: READ ID 	{
+	//No se valida nada acepta cualquier tipo de variable.
+		crear_terceto("READ",yylval.str_val,"_" );
+		printf("READ ID OK \n\n");
+	}
 
-salida_datos: PRINT CADENA {printf("PRINT CADENA OK \n\n"); agregarConstante(yylval.str_val,CteString);}
-| PRINT ID  { printf("PRINT ID OK\n\n");}
+salida_datos: PRINT CADENA { 
+	//No se valida nada solo entra por esta regla si es una cadena.
+	agregarConstante(yylval.str_val,CteString);
+	char nombre[30];
+	nombre_constante(yylval.str_val, nombre);
+	crear_terceto("PRINT", nombre,"_" );
+	printf("PRINT CADENA OK \n\n");
+	}
+| PRINT ID  { 
+		tipo = buscar_tipo_variable(yylval.str_val);
+		printf("Nombre %s\n", yylval.str_val);
+		if(tipo==3){
+			sprintf(mensajeDeError, "Para utilizar Print + variable, la Variable: \"%s\" - Debe ser REAL o ENTERA", yylval.str_val);
+			mostrarError(mensajeDeError);
+		}
+		crear_terceto("PRINT", yylval.str_val,"_" );
+		printf("PRINT ID OK\n\n");
+	}
 
 bloque_iteracion: REPEAT bloque_programa UNTIL condicion {printf("bloque REPEAT-UNTIL OK\n\n");}
 
-asignacion: ID {strcpy(idAux,yylval.str_val);} OPERADOR_ASIGNACION expresion PUNTO_Y_COMA	{printf("asignacion OK\n\n");
+asignacion: ID {
+	tipoIdAsignacion = buscar_tipo_variable(yylval.str_val);
+	apilar(&pilaTipo, tipoIdAsignacion);
+	strcpy(idAux,yylval.str_val);
+} OPERADOR_ASIGNACION expresion PUNTO_Y_COMA	{
+	tipoExpresion=desapilar(&pilaTipo);
+	tipoIdAsignacion=desapilar(&pilaTipo);
+	if(tipoIdAsignacion!=tipoExpresion){
+		char asignacion[10];
+		char expresion [10];
+		buscar_tipo_por_numero(tipoExpresion, expresion);
+		buscar_tipo_por_numero(tipoIdAsignacion, asignacion);
+		sprintf(mensajeDeError, "No se puede asignar a la variable \"%s\" de tipo %s un/a  %s\n" ,idAux, asignacion, expresion );
+		mostrarError(mensajeDeError);
+	}
+
 	E_ind = desapilar(&pilaExpresion);
 	itoa(E_ind,conversionItoA,10);
 	ASIG_ind = crear_terceto("=",idAux,conversionItoA);
+	printf("asignacion OK\n\n");
 }
 
 expresion:  expresion OPERACION_SUMA termino	{printf("expresion -> exp + term OK \n\n");
-	itoa(desapilar(&pilaExpresion),bufferaux1,10);
-	itoa(desapilar(&pilaTermino),bufferaux2,10);
+	tipoTermino= desapilar(&pilaTipo);   // lo desapilo  el de la derecha que es el ultimo que se agrega.
+	tipoExpresion= desapilar(&pilaTipo); // lo desapilo segundo es el primero en agregarse 
+	if(tipoTermino!=tipoExpresion){
+		char termino[10];
+		char expresion [10];
+		buscar_tipo_por_numero(tipoExpresion, expresion);
+		buscar_tipo_por_numero(tipoTermino, termino);
+		sprintf(mensajeDeError, "No se puede sumar %s por %s\n" , expresion, termino );
+		mostrarError(mensajeDeError);
+	}
+	apilar(&pilaTipo, tipoExpresion); // apilo cualquiera de los dos deberian ser iguales
+	formatear_num_terceto(desapilar(&pilaExpresion),bufferaux1);
+	formatear_num_terceto(desapilar(&pilaTermino),bufferaux2);
 	E_ind = crear_terceto("+",bufferaux1,bufferaux2 );
 	apilar(&pilaExpresion,E_ind);
 
 } 
-| expresion OPERACION_RESTA termino 	{printf("expresion -> exp - term OK \n\n");
-	itoa(desapilar(&pilaExpresion),bufferaux1,10);
-	itoa(desapilar(&pilaTermino),bufferaux2,10);
+| expresion OPERACION_RESTA termino 	{
+	tipoTermino= desapilar(&pilaTipo);   // lo desapilo  el de la derecha que es el ultimo que se agrega.
+	tipoExpresion= desapilar(&pilaTipo); // lo desapilo segundo es el primero en agregarse 
+	if(tipoTermino!=tipoExpresion){
+		char termino[10];
+		char expresion [10];
+		buscar_tipo_por_numero(tipoExpresion, expresion);
+		buscar_tipo_por_numero(tipoTermino, termino);
+		sprintf(mensajeDeError, "No se puede restar %s por %s\n" , expresion, termino );
+		mostrarError(mensajeDeError);
+	}
+	apilar(&pilaTipo, tipoExpresion); // apilo cualquiera de los dos deberian ser iguales
+	formatear_num_terceto(desapilar(&pilaExpresion),bufferaux1);
+	formatear_num_terceto(desapilar(&pilaTermino),bufferaux2);
 	E_ind = crear_terceto("-",bufferaux1,bufferaux2 );
 	apilar(&pilaExpresion,E_ind);
+	printf("expresion -> exp - term OK \n\n");
 }
 
-| termino							{printf("expresion -> term OK \n\n");
+| termino{
 	E_ind = desapilar(&pilaTermino);
 	apilar(&pilaExpresion,E_ind);
+	printf("expresion -> term OK \n\n");
 }
 
-termino:	termino OPERACION_MULTIPLICACION factor {printf("term -> term * factor OK \n\n");
-	itoa(desapilar(&pilaTermino),bufferaux1,10);
-	itoa(desapilar(&pilaFactor),bufferaux2,10);
+termino: termino OPERACION_MULTIPLICACION factor {
+	tipoFactor= desapilar(&pilaTipo);   // lo desapilo  el de la derecha que es el ultimo que se agrega.
+	tipoTermino = desapilar(&pilaTipo); // lo desapilo segundo es el primero en agregarse 
+	if(tipoFactor!=tipoTermino){
+		char termino[10];
+		char factor [10];
+		buscar_tipo_por_numero(tipoFactor, factor);
+		buscar_tipo_por_numero(tipoTermino, termino);
+		sprintf(mensajeDeError, "No se puede multiplicar %s por %s\n" , termino, factor );
+		mostrarError(mensajeDeError);
+	}
+	apilar(&pilaTipo, tipoTermino); // apilo cualquiera de los dos deberian ser iguales
+	formatear_num_terceto(desapilar(&pilaTermino),bufferaux1);
+	formatear_num_terceto(desapilar(&pilaFactor),bufferaux2);
 	T_ind=crear_terceto("*",bufferaux1,bufferaux2);
 	apilar(&pilaTermino,T_ind);
+	printf("term -> term * factor OK \n\n");
 } 
-| 			termino OPERACION_DIVISION factor 	{printf("term -> term / factor OK \n\n");
-	itoa(desapilar(&pilaTermino),bufferaux1,10);
-	itoa(desapilar(&pilaFactor),bufferaux2,10);
+| 	termino OPERACION_DIVISION  factor {
+	tipoFactor= desapilar(&pilaTipo);   // lo desapilo  el de la derecha que es el ultimo que se agrega.
+	tipoTermino = desapilar(&pilaTipo); // lo desapilo segundo es el primero en agregarse 
+	if(tipoFactor!=tipoTermino){
+		char termino[10];
+		char factor [10];
+		buscar_tipo_por_numero(tipoFactor, factor);
+		buscar_tipo_por_numero(tipoTermino, termino);
+		sprintf(mensajeDeError, "No se puede dividir %s por %s\n" , termino, factor );
+		mostrarError(mensajeDeError);
+	}
+	apilar(&pilaTipo, tipoTermino); // apilo cualquiera de los dos deberian ser iguales
+	formatear_num_terceto(desapilar(&pilaTermino),bufferaux1);
+	formatear_num_terceto(desapilar(&pilaFactor),bufferaux2);
 	T_ind=crear_terceto("/",bufferaux1,bufferaux2);
 	apilar(&pilaTermino,T_ind);
+	printf("term -> term / factor OK \n\n");
 }
 
-| factor			{printf("term -> factor OK \n\n");
+| factor {
 	T_ind = desapilar(&pilaFactor);
 	apilar(&pilaTermino,T_ind);
+	printf("term -> factor OK \n\n");
 }
 
 factor: ID  {
-	printf("factor -> ID OK\n\n");
+	apilar(&pilaTipo, buscar_tipo_variable(yylval.str_val));
 	F_ind = crear_terceto(yylval.str_val,"_","_");
 	apilar(&pilaFactor,F_ind);
+	printf("factor -> ID OK\n\n");
 }
 
 | ENTERO 	{
-	printf("factor -> Cte_entera OK\n\n");agregarConstante(yylval.str_val,CteInt);
-	F_ind = crear_terceto(yylval.str_val,"_","_");
+	agregarConstante(yylval.str_val,CteInt);
+	char aux[30];
+	nombre_constante(yylval.str_val, aux);
+	F_ind = crear_terceto(aux,"_","_");
+	apilar(&pilaTipo,1);
 	apilar(&pilaFactor,F_ind);
+	printf("factor -> Cte_entera OK\n\n");
 }
-| REAL		{printf("factor -> Cte_Real OK\n\n");agregarConstante(yylval.str_val,CteReal);
-	F_ind = crear_terceto(yylval.str_val,"_","_");
+| REAL {
+	agregarConstante(yylval.str_val,CteReal);
+	apilar(&pilaTipo,2);
+	char aux[30];
+	nombre_constante(yylval.str_val, aux);
+	F_ind = crear_terceto(aux,"_","_");
 	apilar(&pilaFactor,F_ind);
+	printf("factor -> Cte_Real OK\n\n");
 }	
-| CADENA	{printf("factor -> Cte_string OK\n\n");agregarConstante(yylval.str_val,CteString);
-	F_ind = crear_terceto(yylval.str_val,"_","_");
+| CADENA {
+	agregarConstante(yylval.str_val,CteString);
+	apilar(&pilaTipo,3);
+	char aux[30];
+	nombre_constante(yylval.str_val, aux);
+	F_ind = crear_terceto(aux,"_","_");
 	apilar(&pilaFactor,F_ind);
-}
-| PARENTESIS_ABIERTO expresion PARENTESIS_CERRADO	{printf("factor -> ( expresion ) OK\n\n");
-	F_ind = desapilar(&pilaExpresion);
-	apilar(&pilaFactor,F_ind);
+	printf("factor -> Cte_string OK\n\n");
 }
 
-| filtro {printf("factor -> filtro OK\n\n");
+| PARENTESIS_ABIERTO expresion PARENTESIS_CERRADO	{
+	F_ind = desapilar(&pilaExpresion);
+	apilar(&pilaFactor,F_ind);
+	printf("factor -> ( expresion ) OK\n\n");
+}
+
+| filtro {
 	F_ind = crear_terceto(VAR_FILTER,"_","_");
 	apilar(&pilaFactor,F_ind);
+	printf("factor -> filtro OK\n\n");
 	}
 
 bloque_condicional: bloque_if {printf("bloque_condicional OK\n\n\n");}
@@ -554,6 +670,7 @@ int main(int argc,char *argv[]){
 		pilaFactor = crearPila();
 		pilaIf = crearPila();
 		pilaFilter = crearPila();
+		pilaTipo = crearPila();
 		
 		yyparse();
 		
@@ -756,21 +873,7 @@ void escribe_arch_tercetos()
 	for(i = 0; i < indice_terceto; i++)
 	{
 		aux =  vector_tercetos[i];
-		if(strcmp(aux.te1,"_")==0)					// si el primer operando es un guion bajo , grabo como esta
 		fprintf(arch, "[%d] (%s,%s,%s)\n", aux.nroTerceto, aux.ope,aux.te1, aux.te2 );
-		else
-		{	if(strcmp(aux.te2,"_")==0)					// si el segundo operando es un guion bajo, es un terceto JMP
-		fprintf(arch, "[%d] (%s,[%s],%s)\n", aux.nroTerceto, aux.ope,aux.te1, aux.te2 );
-		else
-		{
-			if(*aux.te1>='a' && *aux.te1<='z')			// si el primer operando es una letra, puede que sea una asignacion o similar, pongo corchetes en el 2do operando
-			fprintf(arch, "[%d] (%s,%s,[%s])\n", aux.nroTerceto, aux.ope,aux.te1, aux.te2 );
-			else
-			fprintf(arch, "[%d] (%s,[%s],[%s])\n", aux.nroTerceto, aux.ope,aux.te1, aux.te2 );				// sino, los dos operandos son otros tercetos, pongo corchetes a los dos
-		}
-		
-		}
-		
 	}
 	fclose(arch);
 }
@@ -852,5 +955,42 @@ void agregar_variable_filter_a_tabla(){
 		// Agrego el tipo (Se utiliza para imprimir tabla)
 		strcpy(tablaDeSimbolos[cant_ctes].tipo, TIPO_FILTER);
 		cant_ctes++;
+	}
+}
+int buscar_tipo_variable(char * nombre){
+	for(i=0 ; i< cantidadTokens; i++){
+		if(strcmp(tablaDeSimbolos[i].nombre,nombre)==0){
+			if(strcmp(tablaDeSimbolos[i].tipo,"ENTERO")==0){
+				return 1;
+			}
+			if(strcmp(tablaDeSimbolos[i].tipo, "REAL")==0){
+				return 2;
+			}
+			if(strcmp(tablaDeSimbolos[i].tipo, "CADENA")==0){
+				return 3;
+			}
+		}
+		
+	}
+	return 0;
+}
+void formatear_num_terceto(int numero, char* salida){
+	sprintf(salida, "[%d]",numero);
+}
+void nombre_constante(char* nombre,char* salida){
+	sprintf(salida, "_%s",nombre);
+}
+void buscar_tipo_por_numero(int numero, char* tipo){
+	if(numero==1){
+		strcpy(tipo,"ENTERO");
+		return;
+	}
+	if(numero==2){
+		strcpy(tipo,"REAL");
+		return;
+	}
+	if(numero==3){
+		strcpy(tipo,"CADENA");
+		return;
 	}
 }
