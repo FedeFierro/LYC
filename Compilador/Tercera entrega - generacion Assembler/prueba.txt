@@ -14,24 +14,33 @@ ENDVAR
 
 pepp="Hola";
 
-PRINT "ProgamaLyC"
+[a,aaa,b]:=[10,20,5.5]
+
+[a,aaa,b]:=[10,20,5.5]
+
 
 REPEAT
+	a:=a+1;
+	a:=a+1;
 	a:=a+1;
 	b:=12.3+11.5-3.8;
 	IF(a<var1)
 		cont :=37.5;
 	ENDIF
-UNTIL(a>3 OR b <5)
+UNTIL(a>10+5 OR b<5.0) 
 
-IF IF (a+c ==d) THEN
+IF IF (a+c == 10) THEN
 	a:=33;
 ELSE
 	a:=35;
 ENDIF
-[a,aaa,e]:=[10,20,5.5]
 
 READ cont
+
+IF(a>=var1)
+		cont :=37.5;
+	ENDIF
+
 
 a:=FILTER(_>3 ,[a,var1,c,d]);
 a:=FILTER(NOT (_>7) ,[a,var1,c,d]);

@@ -17,6 +17,7 @@
 	char bufferaux1[20];
 	char bufferaux2[20];
 	char constanteAux[20];
+	FILE *archivoAssembler;
 
 	/* --------------- CONSTANTES --------------- */
 
@@ -27,6 +28,14 @@
 #define VAR_FILTER "@Filter"
 #define TIPO_FILTER "REAL"
 
+#define variableEntera 1
+#define	variableFloat 2
+#define variableString 3
+#define constanteEntera 4
+#define constanteFloat 5
+#define constanteString 6
+
+
 	/* --------------- TABLA DE SIMBOLOS --------------- */
 
 	typedef struct
@@ -35,6 +44,7 @@
 		char tipo  [11];
 		char valor [100];
 		int longitud;
+		int TipodeDato_numerico;
 	} struct_tabla_de_simbolos;
 
 	struct_tabla_de_simbolos tablaDeSimbolos[200];
@@ -43,7 +53,7 @@
 	/* --------------- PROTOTIPO DE FUNCIONES --------------- */
 
 	void guardarTabla(void);
-	void agregarConstante(char*,char*);
+	void agregarConstante(char*,char*, int);
 	int buscarCte(char* , char*);
 	void validarVariableDeclarada(char* nombre);
 	void mostrarError(char *mensaje);
@@ -55,7 +65,13 @@
 	int crear_terceto(char*, char*, char*);
 	void escribe_arch_tercetos();
 	char* validaTipo(char* );
-	
+	void completarTipoNumerico();
+	void escribirAssembler();
+	void escribirCabecera();
+	void escribirTablaDeSimbolos();
+	void escribirFinal();
+	void procesarCodigoIntermedio();
+
 
 	int cantidadTokens = 0;
 	int i=0; 
@@ -75,18 +91,22 @@
 	int aux2=0;
 	char tipoVariableActual[20];
 	char tipoVariable[10];
+	int aux_tiponumerico=0;
+	int aux_ladoIzquierdo_comparacion =0;
+	int aux_ladoDerecho_comparacion =0;
 
 	char* operadorAux;
 	char idAux[20];
 
 	int yylex();
 	int yyerror();
-	
+
 	typedef struct{
 		char id[35];
 		char tipo[10];
+		int tipoNumerico;
 	} operacion;
-	
+
 	operacion vector_operacion[100];
 	int cantOperaciones=0;
 
@@ -110,7 +130,7 @@
 	int ASIG_ind=0;
 	int aux=0;
 	int auxRepeat=0;
-	
+
 	Pila pilaExpresion;
 	Pila pilaTermino;
 	Pila pilaFactor;
@@ -120,7 +140,7 @@
 	Pila pilaOperacion;
 	Pila pilaFilter;
 
-/* --------------- FILTER -------------- */
+	/* --------------- FILTER -------------- */
 	int cont_filter=0;
 	int seq_variable_filter=0;
 	terceto vector_filter[4];			// vector de tercetos para filter 	
@@ -129,25 +149,28 @@
 	int condicion_filter_or=0;		//para saber si la condicion es con or;
 	char tipoCondicion1[10];
 	char tipoCondicion2[10];
+
+
 	/* ---- FUNCIONES FILTER -------------*/
+
 	void invertir_salto(terceto* vector, int indice);
 	void crear_tercetos_filter();
 	void agregar_variable_filter_a_tabla();
 
 	/* --------------- ASigMultiple -------------- */
-	
+
 	typedef struct asign_multiple {
-		
+
 		char valor[10];
 		char nombre[35];
 		char tipo[35];
-		
+
 	}	asign_multiple;
 
 	asign_multiple  vector_asig_multiple[200]; 		// vector de tercetos
 	int indice_asign_multiple=0;
 	int indice_expresiones_asign_multiple = 0;
-	
+
 
 	%}
 
@@ -206,24 +229,29 @@ OPERADOR_ASIG_STRING
 %%
 
 start_programa : programa 
-{ printf("Compilacion exitosa\n\n"); };
+{ 
+	printf("Compilacion exitosa\n\n"); 
+}
 
 programa : bloque_declaracion  bloque_programa
-{ printf("Programa OK\n\n"); };
+{ printf("Programa OK\n\n"); }
 
 bloque_declaracion: VAR lista_definiciones ENDVAR 
 { 
 	finBloqueDeclaraciones=1;
 	quitarDuplicados(); 
 	printf("bloque_definiciones OK\n\n");
+	completarTipoNumerico();
 	cant_ctes=cantidadTokens;	
-};
+}
 
 lista_definiciones: lista_definiciones definicion {	printf("lista_definiciones -> lista_definiciones definicion OK\n\n");} 
 | definicion {	printf("lista_definiciones -> definicion OK\n\n");}
 
 definicion: CORCHETE_ABIERTO lista_tipo_dato CORCHETE_CERRADO DOS_PUNTOS CORCHETE_ABIERTO lista_ids CORCHETE_CERRADO 
-{ acomodarPunterosTS(); printf("definicion OK\n\n");};
+{ acomodarPunterosTS(); 
+	printf("definicion OK\n\n");
+}
 
 lista_tipo_dato: lista_tipo_dato COMA tipo_dato	{ printf("lista_tipo_dato -> lista_tipo_dato , tipo_dato OK\n\n");} 
 | tipo_dato {printf("lista_tipo_dato -> tipo_dato OK \n\n");}
@@ -269,7 +297,7 @@ sentencia : asignacion 	{printf("sentencia -> asignacion OK \n\n");}
 
 entrada_datos: READ ID 	{ 
 	strcpy(idAux,yylval.str_val);	 
-	if(strcmp(validaTipo(idAux),idAux)!=0)
+	if(strcmp(validaTipo(idAux),idAux)!=0)				// verifico contra la TS si la variable existe
 	{
 		crear_terceto("READ",idAux,"_");
 		printf("READ ID OK \n\n");
@@ -282,32 +310,35 @@ entrada_datos: READ ID 	{
 
 salida_datos: PRINT CADENA { 
 	strcpy(idAux,yylval.str_val);
-	agregarConstante(yylval.str_val,CteString);
+	agregarConstante(yylval.str_val,CteString,constanteString);
 	if(strcmp(validaTipo(idAux),"CteString")!=0)
 	{sprintf(mensajeDeError, "La Variable: %s No es de tipo CADENA.\n", idAux);
 		mostrarError(mensajeDeError);
 	}
 	else
 	{printf("PRINT CADENA OK \n\n");
-		
+
 		crear_terceto("PRINT",idAux,"_");}
 }
 | PRINT ID  
 {
 	strcpy(idAux,yylval.str_val);
 	if(strcmp(validaTipo(idAux),"ENTERO")==0||strcmp(validaTipo(idAux),"REAL")==0)
-	{ printf("PRINT ID OK\n\n");crear_terceto("PRINT",idAux,"_");}
-	else {
+	{ 
+		printf("PRINT ID OK\n\n");
+		crear_terceto("PRINT",idAux,"_");}
+	else 
+	{
 		sprintf(mensajeDeError, "La Variable: %s No es de tipo numerico.\n", idAux);
 		mostrarError(mensajeDeError);
-		}
+	}
 }
 
 bloque_iteracion: REPEAT {apilar(&pilaRepeat,indice_terceto);
-							 auxRepeat=indice_terceto;}	bloque_programa UNTIL condicion 
+	auxRepeat=indice_terceto;}	bloque_programa UNTIL condicion 
 {printf("bloque REPEAT-UNTIL OK\n\n");}
 
-asignacion: ID {strcpy(idAux,yylval.str_val);} OPERADOR_ASIGNACION expresion PUNTO_Y_COMA	
+asignacion: ID {strcpy(idAux,yylval.str_val);} OPERADOR_ASIGNACION expresion PUNTO_Y_COMA				// operador_asignacion -> :=
 {
 	printf("asignacion OK\n\n");
 	aux=desapilar(&pilaOperacion);
@@ -325,14 +356,14 @@ asignacion: ID {strcpy(idAux,yylval.str_val);} OPERADOR_ASIGNACION expresion PUN
 
 | ID {strcpy(idAux,yylval.str_val);
 	strcpy(tipoVariable,validaTipo(idAux));
-} OPERADOR_ASIG_STRING 
+} OPERADOR_ASIG_STRING 														// operador_asig_string -> =
 {
 	if(strcmp(tipoVariable,"CADENA")!=0)
 	{sprintf(mensajeDeError, "La Variable: %s No es de tipo CADENA.\n", idAux);
 		mostrarError(mensajeDeError);
 	}
 } 	CADENA PUNTO_Y_COMA	{printf("asignacion_string -> Cte_String OK \n\n");
-	agregarConstante(yylval.str_val,CteString);
+	agregarConstante(yylval.str_val,CteString,constanteString);
 	strcpy(constanteAux,"_");
 	strcat(constanteAux,yylval.str_val);
 	strcpy(constanteAux + strlen(constanteAux), "\0");
@@ -340,8 +371,9 @@ asignacion: ID {strcpy(idAux,yylval.str_val);} OPERADOR_ASIGNACION expresion PUN
 }
 
 expresion:  expresion OPERACION_SUMA termino	
-{printf("expresion -> exp + term OK \n\n");
-	
+{
+	printf("expresion -> exp + term OK \n\n");
+
 	aux=desapilar(&pilaOperacion);
 	aux1=desapilar(&pilaOperacion);
 	if(strcmp(vector_operacion[aux].tipo,vector_operacion[aux1].tipo)==0)
@@ -377,7 +409,9 @@ expresion:  expresion OPERACION_SUMA termino
 	}
 }
 
-| termino							{printf("expresion -> term OK \n\n");
+| termino							
+{
+	printf("expresion -> term OK \n\n");
 	E_ind = desapilar(&pilaTermino);
 	apilar(&pilaExpresion,E_ind);
 }
@@ -420,7 +454,9 @@ termino:	termino OPERACION_MULTIPLICACION factor
 	}
 }
 
-| factor			{printf("term -> factor OK \n\n");
+| factor			
+{
+	printf("term -> factor OK \n\n");
 	T_ind = desapilar(&pilaFactor);
 	apilar(&pilaTermino,T_ind);
 }
@@ -429,21 +465,26 @@ factor: ID  {
 	printf("factor -> ID OK\n\n");
 	strcpy(vector_operacion[cantOperaciones].id,yylval.str_val);
 	strcpy(vector_operacion[cantOperaciones].tipo,validaTipo(yylval.str_val));
+	vector_operacion[cantOperaciones].tipoNumerico = aux_tiponumerico;
 	printf("ID %s\n",vector_operacion[cantOperaciones].id);
 	printf("TIPO %s\n",vector_operacion[cantOperaciones].tipo);
+	printf("TIPO_NUMERICO %d\n",vector_operacion[cantOperaciones].tipoNumerico);
 	apilar(&pilaOperacion,cantOperaciones);
 	cantOperaciones++;
 	F_ind = crear_terceto(yylval.str_val,"_","_");
 	apilar(&pilaFactor,F_ind);
 }
 
-| ENTERO 	{
-	printf("factor -> Cte_entera OK\n\n");agregarConstante(yylval.str_val,CteInt);
+| ENTERO 	
+{
+	printf("factor -> Cte_entera OK\n\n");
+	agregarConstante(yylval.str_val,CteInt,constanteEntera);
 	strcpy(constanteAux,"_");
 	strcat(constanteAux,yylval.str_val);
 	strcpy(constanteAux + strlen(constanteAux), "\0");
 	strcpy(vector_operacion[cantOperaciones].id,constanteAux);
 	strcpy(vector_operacion[cantOperaciones].tipo,"ENTERO");
+	vector_operacion[cantOperaciones].tipoNumerico = 4;
 	printf("ID %s\n",vector_operacion[cantOperaciones].id);
 	printf("TIPO %s\n",vector_operacion[cantOperaciones].tipo);
 	apilar(&pilaOperacion,cantOperaciones);
@@ -451,13 +492,16 @@ factor: ID  {
 	F_ind = crear_terceto(constanteAux,"_","_");
 	apilar(&pilaFactor,F_ind);
 }
-| REAL		{printf("factor -> Cte_Real OK\n\n");
-	agregarConstante(yylval.str_val,CteReal);
+| REAL		
+{
+	printf("factor -> Cte_Real OK\n\n");
+	agregarConstante(yylval.str_val,CteReal,constanteFloat);
 	strcpy(constanteAux,"_");
 	strcat(constanteAux,yylval.str_val);
 	strcpy(constanteAux + strlen(constanteAux), "\0");
 	strcpy(vector_operacion[cantOperaciones].id,constanteAux);
 	strcpy(vector_operacion[cantOperaciones].tipo,"REAL");
+	vector_operacion[cantOperaciones].tipoNumerico = 5;
 	printf("ID %s\n",vector_operacion[cantOperaciones].id);
 	printf("TIPO %s\n",vector_operacion[cantOperaciones].tipo);
 	apilar(&pilaOperacion,cantOperaciones);
@@ -466,12 +510,16 @@ factor: ID  {
 	apilar(&pilaFactor,F_ind);
 }	
 
-| PARENTESIS_ABIERTO expresion PARENTESIS_CERRADO	{printf("factor -> ( expresion ) OK\n\n");
+| PARENTESIS_ABIERTO expresion PARENTESIS_CERRADO	
+{
+	printf("factor -> ( expresion ) OK\n\n");
 	F_ind = desapilar(&pilaExpresion);
 	apilar(&pilaFactor,F_ind);
 }
 
-| filtro {printf("factor -> filtro OK\n\n");
+| filtro 
+{
+	printf("factor -> filtro OK\n\n");
 	char nombreFilter[100];
 	strcpy(nombreFilter,VAR_FILTER);
 	char seqAux[10];
@@ -479,7 +527,7 @@ factor: ID  {
 	strcat(nombreFilter, seqAux);
 	F_ind = crear_terceto(nombreFilter,"_","_");
 	apilar(&pilaFactor,F_ind);
-	}
+}
 
 bloque_condicional: bloque_if {printf("bloque_condicional OK\n\n\n");}
 
@@ -571,7 +619,7 @@ condicion:   PARENTESIS_ABIERTO comparacion PARENTESIS_CERRADO
 	aux=desapilar(&pilaRepeat);
 	itoa(aux,bufferaux1,10);							// desapilo y pongo donde voy si la primer condicion es falsa
 	strcpy(vector_tercetos[indice_terceto-1].te1,bufferaux1);
-	
+
 }
 |	PARENTESIS_ABIERTO comparacion {apilar(&pilaRepeat,aux);} OPERADOR_AND comparacion {apilar(&pilaRepeat,aux);} PARENTESIS_CERRADO 
 {
@@ -589,27 +637,28 @@ condicion:   PARENTESIS_ABIERTO comparacion PARENTESIS_CERRADO
 }
 
 | PARENTESIS_ABIERTO comparacion {
-		apilar(&pilaRepeat,aux);
-		char posInicial[10];
-		itoa(auxRepeat, posInicial,10);
-		aux=crear_terceto("JMP",posInicial,"_");
-	}OPERADOR_OR comparacion {apilar(&pilaRepeat,aux);} PARENTESIS_CERRADO {
-			
-			char posInicial[10];
-			itoa(auxRepeat, posInicial,10);
-			aux=crear_terceto("JMP",posInicial,"_");
-			
-			aux2=desapilar(&pilaRepeat);
-			printf("aux2: %d\n",aux);
-			itoa(indice_terceto,bufferaux1,10);		
-			strcpy(vector_tercetos[aux2].te1,bufferaux1);
-			aux2=desapilar(&pilaRepeat);
-			itoa(aux2+2,bufferaux1,10);		
-			strcpy(vector_tercetos[aux2].te1,bufferaux1);
+	apilar(&pilaRepeat,aux);
+	char posInicial[10];
+	itoa(auxRepeat, posInicial,10);
+	aux=crear_terceto("JMP",posInicial,"_");
+}OPERADOR_OR comparacion {apilar(&pilaRepeat,aux);} PARENTESIS_CERRADO {
+
+	char posInicial[10];
+	itoa(auxRepeat, posInicial,10);
+	aux=crear_terceto("JMP",posInicial,"_");
+
+	aux2=desapilar(&pilaRepeat);
+	printf("aux2: %d\n",aux);
+	itoa(indice_terceto,bufferaux1,10);		
+	strcpy(vector_tercetos[aux2].te1,bufferaux1);
+	aux2=desapilar(&pilaRepeat);
+	itoa(aux2+2,bufferaux1,10);		
+	strcpy(vector_tercetos[aux2].te1,bufferaux1);
 
 }
-| PARENTESIS_ABIERTO OPERADOR_NOT PARENTESIS_ABIERTO comparacion PARENTESIS_CERRADO PARENTESIS_CERRADO {
-	
+| PARENTESIS_ABIERTO OPERADOR_NOT PARENTESIS_ABIERTO comparacion PARENTESIS_CERRADO PARENTESIS_CERRADO 
+{
+
 	invertir_salto(vector_tercetos, aux);
 	aux=desapilar(&pilaRepeat);
 	itoa(aux,bufferaux1,10);							// desapilo y pongo donde voy si la primer condicion es falsa
@@ -617,371 +666,412 @@ condicion:   PARENTESIS_ABIERTO comparacion PARENTESIS_CERRADO
 }
 
 
-comparacion : expresion OPERADOR_MAYOR_A expresion	
+comparacion : expresion {aux_ladoIzquierdo_comparacion = desapilar(&pilaOperacion);} OPERADOR_MAYOR_A expresion	{aux_ladoDerecho_comparacion = desapilar(&pilaOperacion);}
 {
-	ladoDerecho = desapilar(&pilaExpresion);
-	ladoIzquierdo = desapilar(&pilaExpresion);
-	itoa(ladoIzquierdo,bufferaux1,10);
-	itoa(ladoDerecho,bufferaux2,10);
-	crear_terceto("CMP",bufferaux1,bufferaux2);
-	aux = crear_terceto("JNA","_","_");							// pongo en aux el numero de terceto donde usaria el salto
+
+	if(strcmp(vector_operacion[aux_ladoIzquierdo_comparacion].tipo,vector_operacion[aux_ladoDerecho_comparacion].tipo)==0)
+	{
+		ladoDerecho = desapilar(&pilaExpresion);
+		ladoIzquierdo = desapilar(&pilaExpresion);
+		itoa(ladoIzquierdo,bufferaux1,10);
+		itoa(ladoDerecho,bufferaux2,10);
+		crear_terceto("CMP",bufferaux1,bufferaux2);
+		aux = crear_terceto("JNA","_","_");							// pongo en aux el numero de terceto donde usaria el salto
+	}
+	else
+	{
+		sprintf(mensajeDeError, "Incompatibilidad de tipos de variables en operador comparacion MAYOR\n");
+		mostrarError(mensajeDeError);
+	}
 }
-| expresion OPERADOR_MENOR_A expresion
+| expresion {aux_ladoIzquierdo_comparacion = desapilar(&pilaOperacion);} OPERADOR_MENOR_A expresion {aux_ladoDerecho_comparacion = desapilar(&pilaOperacion);}
 {
-	ladoDerecho = desapilar(&pilaExpresion);
-	ladoIzquierdo = desapilar(&pilaExpresion);
-	itoa(ladoIzquierdo,bufferaux1,10);
-	itoa(ladoDerecho,bufferaux2,10);
-	crear_terceto("CMP",bufferaux1,bufferaux2);
-	aux = crear_terceto("JAE","_","_");		
+	if(strcmp(vector_operacion[aux_ladoIzquierdo_comparacion].tipo,vector_operacion[aux_ladoDerecho_comparacion].tipo)==0)
+	{
+		ladoDerecho = desapilar(&pilaExpresion);
+		ladoIzquierdo = desapilar(&pilaExpresion);
+		itoa(ladoIzquierdo,bufferaux1,10);
+		itoa(ladoDerecho,bufferaux2,10);
+		crear_terceto("CMP",bufferaux1,bufferaux2);
+		aux = crear_terceto("JAE","_","_");		
+	}
+	else
+	{
+		sprintf(mensajeDeError, "Incompatibilidad de tipos de variables en operador comparacion MENOR\n");
+		mostrarError(mensajeDeError);
+	}
 }
 
-| expresion OPERADOR_MAYOR_O_IGUAL_A expresion
+| expresion {aux_ladoIzquierdo_comparacion = desapilar(&pilaOperacion);} OPERADOR_MAYOR_O_IGUAL_A expresion {aux_ladoDerecho_comparacion = desapilar(&pilaOperacion);}
 {
-	ladoDerecho = desapilar(&pilaExpresion);
-	ladoIzquierdo = desapilar(&pilaExpresion);
-	itoa(ladoIzquierdo,bufferaux1,10);
-	itoa(ladoDerecho,bufferaux2,10);
-	crear_terceto("CMP",bufferaux1,bufferaux2);
-	aux = crear_terceto("JNAE","_","_");		
+	if(strcmp(vector_operacion[aux_ladoIzquierdo_comparacion].tipo,vector_operacion[aux_ladoDerecho_comparacion].tipo)==0)
+	{
+		ladoDerecho = desapilar(&pilaExpresion);
+		ladoIzquierdo = desapilar(&pilaExpresion);
+		itoa(ladoIzquierdo,bufferaux1,10);
+		itoa(ladoDerecho,bufferaux2,10);
+		crear_terceto("CMP",bufferaux1,bufferaux2);
+		aux = crear_terceto("JNAE","_","_");		
+	}
+	else
+	{
+		sprintf(mensajeDeError, "Incompatibilidad de tipos de variables en operador comparacion MAYOR O IGUAL\n");
+		mostrarError(mensajeDeError);
+	}
 }
 
-| expresion OPERADOR_MENOR_O_IGUAL_A expresion
+| expresion {aux_ladoIzquierdo_comparacion = desapilar(&pilaOperacion);} OPERADOR_MENOR_O_IGUAL_A expresion {aux_ladoDerecho_comparacion = desapilar(&pilaOperacion);}
 {
-	ladoDerecho = desapilar(&pilaExpresion);
-	ladoIzquierdo = desapilar(&pilaExpresion);
-	itoa(ladoIzquierdo,bufferaux1,10);
-	itoa(ladoDerecho,bufferaux2,10);
-	crear_terceto("CMP",bufferaux1,bufferaux2);
-	aux = crear_terceto("JA","_","_");		
+	if(strcmp(vector_operacion[aux_ladoIzquierdo_comparacion].tipo,vector_operacion[aux_ladoDerecho_comparacion].tipo)==0)
+	{
+		ladoDerecho = desapilar(&pilaExpresion);
+		ladoIzquierdo = desapilar(&pilaExpresion);
+		itoa(ladoIzquierdo,bufferaux1,10);
+		itoa(ladoDerecho,bufferaux2,10);
+		crear_terceto("CMP",bufferaux1,bufferaux2);
+		aux = crear_terceto("JA","_","_");		
+	}
+	else
+	{
+		sprintf(mensajeDeError, "Incompatibilidad de tipos de variables en operador comparacion MENOR O IGUAL\n");
+		mostrarError(mensajeDeError);
+	}
 }
 
-| expresion OPERADOR_IGUAL_A expresion
+| expresion {aux_ladoIzquierdo_comparacion = desapilar(&pilaOperacion);} OPERADOR_IGUAL_A expresion {aux_ladoDerecho_comparacion = desapilar(&pilaOperacion);}
 {
-	ladoDerecho = desapilar(&pilaExpresion);
-	ladoIzquierdo = desapilar(&pilaExpresion);
-	itoa(ladoIzquierdo,bufferaux1,10);
-	itoa(ladoDerecho,bufferaux2,10);
-	crear_terceto("CMP",bufferaux1,bufferaux2);
-	aux = crear_terceto("JNE","_","_");		
+	if(strcmp(vector_operacion[aux_ladoIzquierdo_comparacion].tipo,vector_operacion[aux_ladoDerecho_comparacion].tipo)==0){
+		ladoDerecho = desapilar(&pilaExpresion);
+		ladoIzquierdo = desapilar(&pilaExpresion);
+		itoa(ladoIzquierdo,bufferaux1,10);
+		itoa(ladoDerecho,bufferaux2,10);
+		crear_terceto("CMP",bufferaux1,bufferaux2);
+		aux = crear_terceto("JNE","_","_");		
+	}
+	else
+	{
+		sprintf(mensajeDeError, "Incompatibilidad de tipos de variables en operador comparacion IGUAL\n");
+		mostrarError(mensajeDeError);
+	}
 }
-| expresion OPERADOR_DISTINTO_A expresion
+| expresion {aux_ladoIzquierdo_comparacion = desapilar(&pilaOperacion);} OPERADOR_DISTINTO_A expresion {aux_ladoDerecho_comparacion = desapilar(&pilaOperacion);}
 {
-	ladoDerecho = desapilar(&pilaExpresion);
-	ladoIzquierdo = desapilar(&pilaExpresion);
-	itoa(ladoIzquierdo,bufferaux1,10);
-	itoa(ladoDerecho,bufferaux2,10);
-	crear_terceto("CMP",bufferaux1,bufferaux2);
-	aux = crear_terceto("JE","_","_");		
+	if(strcmp(vector_operacion[aux_ladoIzquierdo_comparacion].tipo,vector_operacion[aux_ladoDerecho_comparacion].tipo)==0){
+		ladoDerecho = desapilar(&pilaExpresion);
+		ladoIzquierdo = desapilar(&pilaExpresion);
+		itoa(ladoIzquierdo,bufferaux1,10);
+		itoa(ladoDerecho,bufferaux2,10);
+		crear_terceto("CMP",bufferaux1,bufferaux2);
+		aux = crear_terceto("JE","_","_");		
+	}
+	else
+	{
+		sprintf(mensajeDeError, "Incompatibilidad de tipos de variables en operador comparacion DISTINTO\n");
+		mostrarError(mensajeDeError);
+	}
 }
-
 filtro: FILTER {
-			condicion_filter_doble=0; 
-			condicion_filter_or=0; 
-			cont_filter=0;
-			agregarConstante("0", CteInt);
-			seq_variable_filter++;
-			} 
-		PARENTESIS_ABIERTO condicion_filter COMA  CORCHETE_ABIERTO {
-				
-		
-			}lista_ids_filter CORCHETE_CERRADO PARENTESIS_CERRADO 
-			{
-				char nombreFilter[100];
-				strcpy(nombreFilter,VAR_FILTER);
-				char seqAux[10];
-				itoa(seq_variable_filter,seqAux,10);
-				strcat(nombreFilter, seqAux);
-				char tipo[10];
-				int auxOpe = desapilar(&pilaOperacion);
-				agregar_variable_filter_a_tabla(nombreFilter, tipoCondicion1);
-				crear_terceto("=",nombreFilter,"0"); //valor por default si nunguna cumple la condicion sale por este
-				int i=0;
-				int filter_i;
-				itoa(indice_terceto,bufferaux1,10);
-				for(i=0; i< cont_filter; i++){
-					filter_i=desapilar(&pilaFilter);
-					strcpy(vector_tercetos[filter_i].te1,bufferaux1);
-				}
-				strcpy(vector_operacion[cantOperaciones].id,nombreFilter);
-				strcpy(vector_operacion[cantOperaciones].tipo,tipoCondicion1);
-				apilar(&pilaOperacion,cantOperaciones);
-				cantOperaciones++;
-				printf("FILTER OK\n\n");
-			}
+	condicion_filter_doble=0; 
+	condicion_filter_or=0; 
+	cont_filter=0;
+	agregarConstante("0", CteInt,constanteEntera);
+	seq_variable_filter++;
+} 
+PARENTESIS_ABIERTO condicion_filter COMA  CORCHETE_ABIERTO {
+
+
+}lista_ids_filter CORCHETE_CERRADO PARENTESIS_CERRADO 
+{
+	char nombreFilter[100];
+	strcpy(nombreFilter,VAR_FILTER);
+	char seqAux[10];
+	itoa(seq_variable_filter,seqAux,10);
+	strcat(nombreFilter, seqAux);
+	char tipo[10];
+	int auxOpe = desapilar(&pilaOperacion);
+	agregar_variable_filter_a_tabla(nombreFilter, tipoCondicion1);
+	crear_terceto("=",nombreFilter,"0"); //valor por default si nunguna cumple la condicion sale por este
+	int i=0;
+	int filter_i;
+	itoa(indice_terceto,bufferaux1,10);
+	for(i=0; i< cont_filter; i++){
+		filter_i=desapilar(&pilaFilter);
+		strcpy(vector_tercetos[filter_i].te1,bufferaux1);
+	}
+	strcpy(vector_operacion[cantOperaciones].id,nombreFilter);
+	strcpy(vector_operacion[cantOperaciones].tipo,tipoCondicion1);
+	apilar(&pilaOperacion,cantOperaciones);
+	cantOperaciones++;
+	printf("FILTER OK\n\n");
+}
 
 condicion_filter: comparacion_filter{ 
 	vector_filter[0] = vector_condicion_filter[0];
 	vector_filter[1] = vector_condicion_filter[1];
 	int aux = desapilar(&pilaOperacion);
 	strcpy(tipoCondicion1, vector_operacion[aux].tipo);
-	
-	} OPERADOR_AND comparacion_filter { 
+
+} OPERADOR_AND comparacion_filter { 
 	vector_filter[2] = vector_condicion_filter[0];
 	vector_filter[3] = vector_condicion_filter[1]; 
 	int aux = desapilar(&pilaOperacion);
 	strcpy(tipoCondicion2, vector_operacion[aux].tipo);
 	if(strcmp(tipoCondicion1, tipoCondicion2)==0){		
-	condicion_filter_doble=1;
+		condicion_filter_doble=1;
 	}else{
 		sprintf(mensajeDeError, "Incompatibilidad de tipos de variables en la comparacion filter\n");
 		mostrarError(mensajeDeError);
 	}
-	}
+}
 
 | comparacion_filter { 
-		vector_filter[0] = vector_condicion_filter[0];
-		invertir_salto(vector_condicion_filter,1);
-		int aux = desapilar(&pilaOperacion);
-		strcpy(tipoCondicion1, vector_operacion[aux].tipo);
-		vector_filter[1] = vector_condicion_filter[1];
-	
-		} OPERADOR_OR comparacion_filter { 
-		printf("Aqui\n");
-		vector_filter[2] = vector_condicion_filter[0];
-		vector_filter[3] = vector_condicion_filter[1];
-		int aux = desapilar(&pilaOperacion);
-		
-		strcpy(tipoCondicion2, vector_operacion[aux].tipo);
-		if(strcmp(tipoCondicion1, tipoCondicion2)==0){		
-			condicion_filter_doble=1;
-			condicion_filter_or=1;
-		}
-		else{
-			sprintf(mensajeDeError, "Incompatibilidad de tipos de variables en la comparacion filter\n");
-			mostrarError(mensajeDeError);
-		}
+	vector_filter[0] = vector_condicion_filter[0];
+	invertir_salto(vector_condicion_filter,1);
+	int aux = desapilar(&pilaOperacion);
+	strcpy(tipoCondicion1, vector_operacion[aux].tipo);
+	vector_filter[1] = vector_condicion_filter[1];
+
+} OPERADOR_OR comparacion_filter { 
+	printf("Aqui\n");
+	vector_filter[2] = vector_condicion_filter[0];
+	vector_filter[3] = vector_condicion_filter[1];
+	int aux = desapilar(&pilaOperacion);
+
+	strcpy(tipoCondicion2, vector_operacion[aux].tipo);
+	if(strcmp(tipoCondicion1, tipoCondicion2)==0){		
+		condicion_filter_doble=1;
+		condicion_filter_or=1;
 	}
+	else{
+		sprintf(mensajeDeError, "Incompatibilidad de tipos de variables en la comparacion filter\n");
+		mostrarError(mensajeDeError);
+	}
+}
 
 | OPERADOR_NOT PARENTESIS_ABIERTO comparacion_filter PARENTESIS_CERRADO{
-		int aux = desapilar(&pilaOperacion);
-		strcpy(tipoCondicion1, vector_operacion[aux].tipo);
-		vector_filter[0] = vector_condicion_filter[0];
-		invertir_salto(vector_condicion_filter, 1);
-		vector_filter[1] = vector_condicion_filter[1];
-  
-	}
+	int aux = desapilar(&pilaOperacion);
+	strcpy(tipoCondicion1, vector_operacion[aux].tipo);
+	vector_filter[0] = vector_condicion_filter[0];
+	invertir_salto(vector_condicion_filter, 1);
+	vector_filter[1] = vector_condicion_filter[1];
+
+}
 | comparacion_filter {
-		int aux = desapilar(&pilaOperacion);
-		strcpy(tipoCondicion1, vector_operacion[aux].tipo);
-		vector_filter[0] = vector_condicion_filter[0];
-		vector_filter[1] = vector_condicion_filter[1];
-	}
+	int aux = desapilar(&pilaOperacion);
+	strcpy(tipoCondicion1, vector_operacion[aux].tipo);
+	vector_filter[0] = vector_condicion_filter[0];
+	vector_filter[1] = vector_condicion_filter[1];
+}
 
 comparacion_filter : 
-	GUION_BAJO OPERADOR_MAYOR_A expresion_numerica {
-			ladoDerecho = desapilar(&pilaExpresion);
-			itoa(ladoDerecho,bufferaux1,10);
-			terceto aux;
-			strcpy(aux.ope,"CMP");
-			strcpy(aux.te2,bufferaux1);
-			vector_condicion_filter[0]= aux;
-			strcpy(aux.ope,"JNA");
-			vector_condicion_filter[1]= aux;
-		}	
-	| GUION_BAJO OPERADOR_MENOR_A expresion_numerica{
-			ladoDerecho = desapilar(&pilaExpresion);
-			itoa(ladoDerecho,bufferaux1,10);
-			terceto aux;
-			strcpy(aux.ope,"CMP");
-			strcpy(aux.te2,bufferaux1);
-			vector_condicion_filter[0]= aux;
-			strcpy(aux.ope,"JAE");
-			vector_condicion_filter[1]= aux;
-		}	
+GUION_BAJO OPERADOR_MAYOR_A expresion_numerica {
+	ladoDerecho = desapilar(&pilaExpresion);
+	itoa(ladoDerecho,bufferaux1,10);
+	terceto aux;
+	strcpy(aux.ope,"CMP");
+	strcpy(aux.te2,bufferaux1);
+	vector_condicion_filter[0]= aux;
+	strcpy(aux.ope,"JNA");
+	vector_condicion_filter[1]= aux;
+}	
+| GUION_BAJO OPERADOR_MENOR_A expresion_numerica{
+	ladoDerecho = desapilar(&pilaExpresion);
+	itoa(ladoDerecho,bufferaux1,10);
+	terceto aux;
+	strcpy(aux.ope,"CMP");
+	strcpy(aux.te2,bufferaux1);
+	vector_condicion_filter[0]= aux;
+	strcpy(aux.ope,"JAE");
+	vector_condicion_filter[1]= aux;
+}	
 | GUION_BAJO OPERADOR_MAYOR_O_IGUAL_A expresion_numerica{
-			ladoDerecho = desapilar(&pilaExpresion);
-			itoa(ladoDerecho,bufferaux1,10);
-			terceto aux;
-			strcpy(aux.ope,"CMP");
-			strcpy(aux.te2,bufferaux1);
-			vector_condicion_filter[0]= aux;
-			strcpy(aux.ope,"JNAE");
-			vector_condicion_filter[1]= aux;
-		}	
+	ladoDerecho = desapilar(&pilaExpresion);
+	itoa(ladoDerecho,bufferaux1,10);
+	terceto aux;
+	strcpy(aux.ope,"CMP");
+	strcpy(aux.te2,bufferaux1);
+	vector_condicion_filter[0]= aux;
+	strcpy(aux.ope,"JNAE");
+	vector_condicion_filter[1]= aux;
+}	
 | GUION_BAJO OPERADOR_MENOR_O_IGUAL_A expresion_numerica{
-			ladoDerecho = desapilar(&pilaExpresion);
-			itoa(ladoDerecho,bufferaux1,10);
-			terceto aux;
-			strcpy(aux.ope,"CMP");
-			strcpy(aux.te2,bufferaux1);
-			vector_condicion_filter[0]= aux;
-			strcpy(aux.ope,"JA");
-			vector_condicion_filter[1]= aux;
-		}	
+	ladoDerecho = desapilar(&pilaExpresion);
+	itoa(ladoDerecho,bufferaux1,10);
+	terceto aux;
+	strcpy(aux.ope,"CMP");
+	strcpy(aux.te2,bufferaux1);
+	vector_condicion_filter[0]= aux;
+	strcpy(aux.ope,"JA");
+	vector_condicion_filter[1]= aux;
+}	
 | GUION_BAJO OPERADOR_IGUAL_A expresion_numerica{
-			ladoDerecho = desapilar(&pilaExpresion);
-			itoa(ladoDerecho,bufferaux1,10);
-			terceto aux;
-			strcpy(aux.ope,"CMP");
-			strcpy(aux.te2,bufferaux1);
-			vector_condicion_filter[0]= aux;
-			strcpy(aux.ope,"JNE");
-			vector_condicion_filter[1]= aux;
-		}	
+	ladoDerecho = desapilar(&pilaExpresion);
+	itoa(ladoDerecho,bufferaux1,10);
+	terceto aux;
+	strcpy(aux.ope,"CMP");
+	strcpy(aux.te2,bufferaux1);
+	vector_condicion_filter[0]= aux;
+	strcpy(aux.ope,"JNE");
+	vector_condicion_filter[1]= aux;
+}	
 | GUION_BAJO OPERADOR_DISTINTO_A expresion_numerica{
-			ladoDerecho = desapilar(&pilaExpresion);
-			itoa(ladoDerecho,bufferaux1,10);
-			terceto aux;
-			strcpy(aux.ope,"CMP");
-			strcpy(aux.te2,bufferaux1);
-			vector_condicion_filter[0]= aux;
-			strcpy(aux.ope,"JE");
-			vector_condicion_filter[1]= aux;
-		}	
+	ladoDerecho = desapilar(&pilaExpresion);
+	itoa(ladoDerecho,bufferaux1,10);
+	terceto aux;
+	strcpy(aux.ope,"CMP");
+	strcpy(aux.te2,bufferaux1);
+	vector_condicion_filter[0]= aux;
+	strcpy(aux.ope,"JE");
+	vector_condicion_filter[1]= aux;
+}	
 
+expresion_numerica: 
+expresion_numerica OPERACION_SUMA termino_numerico	{
+	printf("expresion_numerica -> exp + term OK \n\n");
+	aux=desapilar(&pilaOperacion);
+	aux1=desapilar(&pilaOperacion);
+	if(strcmp(vector_operacion[aux].tipo,vector_operacion[aux1].tipo)==0)
+	{
+		itoa(desapilar(&pilaExpresion),bufferaux1,10);
+		itoa(desapilar(&pilaTermino),bufferaux2,10);
+		E_ind = crear_terceto("+",bufferaux1,bufferaux2 );
+		apilar(&pilaExpresion,E_ind);
+		apilar(&pilaOperacion,aux);
+	}
+	else
+	{
+		sprintf(mensajeDeError, "Incompatibilidad de tipos de variables en la suma\n");
+		mostrarError(mensajeDeError);
+	}
+}	 
+| expresion_numerica OPERACION_RESTA termino_numerico 	{
+	printf("expresion_numerica -> exp - term OK \n\n");
+	if(strcmp(vector_operacion[aux].tipo,vector_operacion[aux1].tipo)==0)
+	{
+		itoa(desapilar(&pilaExpresion),bufferaux1,10);
+		itoa(desapilar(&pilaTermino),bufferaux2,10);
+		E_ind = crear_terceto("-",bufferaux1,bufferaux2 );
+		apilar(&pilaExpresion,E_ind);
+		apilar(&pilaOperacion,aux);
+	}
+	else
+	{
+		sprintf(mensajeDeError, "Incompatibilidad de tipos de variables en la resta\n");
+		mostrarError(mensajeDeError);
+	}
+
+}
+| termino_numerico	{
+	printf("expresion_numerica -> term OK \n\n");
+	E_ind = desapilar(&pilaTermino);
+	apilar(&pilaExpresion,E_ind);
+}
+
+termino_numerico: 
+termino_numerico OPERACION_MULTIPLICACION factor_numerico {
+	printf("term -> term * factor_numerico OK \n\n");
+	if(strcmp(vector_operacion[aux].tipo,vector_operacion[aux1].tipo)==0)
+	{
+		itoa(desapilar(&pilaTermino),bufferaux1,10);
+		itoa(desapilar(&pilaFactor),bufferaux2,10);
+		T_ind=crear_terceto("*",bufferaux1,bufferaux2);
+		apilar(&pilaTermino,T_ind);
+		apilar(&pilaOperacion,aux);
+	}
+	else
+	{
+		sprintf(mensajeDeError, "Incompatibilidad de tipos de variables en la multiplicacion\n");
+		mostrarError(mensajeDeError);
+	}
+
+} 
+| termino_numerico OPERACION_DIVISION factor_numerico 	{
+	printf("term -> term / factor_numerico OK \n\n");
+	if(strcmp(vector_operacion[aux].tipo,vector_operacion[aux1].tipo)==0)
+	{
+		itoa(desapilar(&pilaTermino),bufferaux1,10);
+		itoa(desapilar(&pilaFactor),bufferaux2,10);
+		T_ind=crear_terceto("/",bufferaux1,bufferaux2);
+		apilar(&pilaTermino,T_ind);
+		apilar(&pilaOperacion,aux);
+	}
+	else
+	{
+		sprintf(mensajeDeError, "Incompatibilidad de tipos de variables en la division\n");
+		mostrarError(mensajeDeError);
+	}
+
+}
+| factor_numerico{
+	printf("term -> factor_numerico OK \n\n");
+	T_ind = desapilar(&pilaFactor);
+	apilar(&pilaTermino,T_ind);
+}
+
+factor_numerico: ID {
+	printf("factor numerico -> ID OK\n\n");
+	strcpy(vector_operacion[cantOperaciones].id,yylval.str_val);
+	strcpy(vector_operacion[cantOperaciones].tipo,validaTipo(yylval.str_val));
+	printf("ID %s\n",vector_operacion[cantOperaciones].id);
+	printf("TIPO %s\n",vector_operacion[cantOperaciones].tipo);
+	apilar(&pilaOperacion,cantOperaciones);
+	cantOperaciones++;
+	F_ind = crear_terceto(yylval.str_val,"_","_");
+	apilar(&pilaFactor,F_ind);
+}
+| ENTERO {	
+	printf("factor numerico -> Cte_entera OK\n\n");
+	strcpy(constanteAux,"_");
+	strcat(constanteAux,yylval.str_val);
+	strcpy(constanteAux + strlen(constanteAux), "\0");
+	strcpy(vector_operacion[cantOperaciones].id,constanteAux);
+	strcpy(vector_operacion[cantOperaciones].tipo,"ENTERO");
+	printf("ID %s\n",vector_operacion[cantOperaciones].id);
+	printf("TIPO %s\n",vector_operacion[cantOperaciones].tipo);
+	apilar(&pilaOperacion,cantOperaciones);
+	cantOperaciones++;
+	F_ind = crear_terceto(constanteAux,"_","_");
+	apilar(&pilaFactor,F_ind);
+}
+| REAL {
+	printf("factor numerico -> Cte_Real OK\n\n");
+	agregarConstante(yylval.str_val,CteReal,constanteFloat);
+	strcpy(constanteAux,"_");
+	strcat(constanteAux,yylval.str_val);
+	strcpy(constanteAux + strlen(constanteAux), "\0");
+	strcpy(vector_operacion[cantOperaciones].id,constanteAux);
+	strcpy(vector_operacion[cantOperaciones].tipo,"REAL");
+	printf("ID %s\n",vector_operacion[cantOperaciones].id);
+	printf("TIPO %s\n",vector_operacion[cantOperaciones].tipo);
+	apilar(&pilaOperacion,cantOperaciones);
+	cantOperaciones++;
+	F_ind = crear_terceto(constanteAux,"_","_");
+	apilar(&pilaFactor,F_ind);
+}	
+| PARENTESIS_ABIERTO expresion_numerica PARENTESIS_CERRADO {
+	printf("factor numerico -> (expresion numerica) OK\n\n");
+	F_ind = desapilar(&pilaExpresion);
+	apilar(&pilaFactor,F_ind);
+}
+
+lista_ids_filter: 
+lista_ids_filter COMA ID {
+	printf("%s\n", yylval.str_val);
+	guardarEnVectorTablaSimbolos(2,yylval.str_val);
+	printf("lista_ids -> lista_ids , ID OK\n\n");
+	crear_tercetos_filter();
+}
+| ID {
+	printf("%s\n", yylval.str_val);
+	guardarEnVectorTablaSimbolos(2,yylval.str_val);
+	printf("lista_ids -> ID OK\n\n");
+	crear_tercetos_filter();
+}
+
+////////********	Asignacion Multiple 	*********////////////
 
 asignacion_multiple: CORCHETE_ABIERTO lista_ids_asignMultiple CORCHETE_CERRADO OPERADOR_ASIGNACION CORCHETE_ABIERTO lista_expresiones_asignMultiple CORCHETE_CERRADO 
 {printf("ASIGNACION MULTIPLE OK\n\n");}
-
-lista_expresiones : lista_expresiones COMA expresion_numerica
-| expresion_numerica
-
-
-expresion_numerica: 
-	expresion_numerica OPERACION_SUMA termino_numerico	{
-			printf("expresion_numerica -> exp + term OK \n\n");
-			aux=desapilar(&pilaOperacion);
-			aux1=desapilar(&pilaOperacion);
-			if(strcmp(vector_operacion[aux].tipo,vector_operacion[aux1].tipo)==0)
-			{
-				itoa(desapilar(&pilaExpresion),bufferaux1,10);
-				itoa(desapilar(&pilaTermino),bufferaux2,10);
-				E_ind = crear_terceto("+",bufferaux1,bufferaux2 );
-				apilar(&pilaExpresion,E_ind);
-				apilar(&pilaOperacion,aux);
-			}
-			else
-			{
-				sprintf(mensajeDeError, "Incompatibilidad de tipos de variables en la suma\n");
-				mostrarError(mensajeDeError);
-			}
-		}	 
-	| expresion_numerica OPERACION_RESTA termino_numerico 	{
-			printf("expresion_numerica -> exp - term OK \n\n");
-			if(strcmp(vector_operacion[aux].tipo,vector_operacion[aux1].tipo)==0)
-			{
-				itoa(desapilar(&pilaExpresion),bufferaux1,10);
-				itoa(desapilar(&pilaTermino),bufferaux2,10);
-				E_ind = crear_terceto("-",bufferaux1,bufferaux2 );
-				apilar(&pilaExpresion,E_ind);
-				apilar(&pilaOperacion,aux);
-			}
-			else
-			{
-				sprintf(mensajeDeError, "Incompatibilidad de tipos de variables en la resta\n");
-				mostrarError(mensajeDeError);
-			}
-		
-		}
-| termino_numerico	{
-			printf("expresion_numerica -> term OK \n\n");
-			E_ind = desapilar(&pilaTermino);
-			apilar(&pilaExpresion,E_ind);
-		}
-
-termino_numerico: 
-	termino_numerico OPERACION_MULTIPLICACION factor_numerico {
-			printf("term -> term * factor_numerico OK \n\n");
-			if(strcmp(vector_operacion[aux].tipo,vector_operacion[aux1].tipo)==0)
-			{
-				itoa(desapilar(&pilaTermino),bufferaux1,10);
-				itoa(desapilar(&pilaFactor),bufferaux2,10);
-				T_ind=crear_terceto("*",bufferaux1,bufferaux2);
-				apilar(&pilaTermino,T_ind);
-				apilar(&pilaOperacion,aux);
-			}
-			else
-			{
-				sprintf(mensajeDeError, "Incompatibilidad de tipos de variables en la multiplicacion\n");
-				mostrarError(mensajeDeError);
-			}
-			
-		} 
-| termino_numerico OPERACION_DIVISION factor_numerico 	{
-			printf("term -> term / factor_numerico OK \n\n");
-			if(strcmp(vector_operacion[aux].tipo,vector_operacion[aux1].tipo)==0)
-			{
-				itoa(desapilar(&pilaTermino),bufferaux1,10);
-				itoa(desapilar(&pilaFactor),bufferaux2,10);
-				T_ind=crear_terceto("/",bufferaux1,bufferaux2);
-				apilar(&pilaTermino,T_ind);
-				apilar(&pilaOperacion,aux);
-			}
-			else
-			{
-				sprintf(mensajeDeError, "Incompatibilidad de tipos de variables en la division\n");
-				mostrarError(mensajeDeError);
-			}
-			
-		}
-| factor_numerico{
-			printf("term -> factor_numerico OK \n\n");
-			T_ind = desapilar(&pilaFactor);
-			apilar(&pilaTermino,T_ind);
-		}
-
-factor_numerico: ID {
-		printf("factor numerico -> ID OK\n\n");
-		strcpy(vector_operacion[cantOperaciones].id,yylval.str_val);
-		strcpy(vector_operacion[cantOperaciones].tipo,validaTipo(yylval.str_val));
-		printf("ID %s\n",vector_operacion[cantOperaciones].id);
-		printf("TIPO %s\n",vector_operacion[cantOperaciones].tipo);
-		apilar(&pilaOperacion,cantOperaciones);
-		cantOperaciones++;
-		F_ind = crear_terceto(yylval.str_val,"_","_");
-		apilar(&pilaFactor,F_ind);
-}
-| ENTERO {	
-		printf("factor numerico -> Cte_entera OK\n\n");
-		strcpy(constanteAux,"_");
-		strcat(constanteAux,yylval.str_val);
-		strcpy(constanteAux + strlen(constanteAux), "\0");
-		strcpy(vector_operacion[cantOperaciones].id,constanteAux);
-		strcpy(vector_operacion[cantOperaciones].tipo,"ENTERO");
-		printf("ID %s\n",vector_operacion[cantOperaciones].id);
-		printf("TIPO %s\n",vector_operacion[cantOperaciones].tipo);
-		apilar(&pilaOperacion,cantOperaciones);
-		cantOperaciones++;
-		F_ind = crear_terceto(constanteAux,"_","_");
-		apilar(&pilaFactor,F_ind);
-	}
-| REAL {
-		printf("factor numerico -> Cte_Real OK\n\n");
-		agregarConstante(yylval.str_val,CteReal);
-		strcpy(constanteAux,"_");
-		strcat(constanteAux,yylval.str_val);
-		strcpy(constanteAux + strlen(constanteAux), "\0");
-		strcpy(vector_operacion[cantOperaciones].id,constanteAux);
-		strcpy(vector_operacion[cantOperaciones].tipo,"REAL");
-		printf("ID %s\n",vector_operacion[cantOperaciones].id);
-		printf("TIPO %s\n",vector_operacion[cantOperaciones].tipo);
-		apilar(&pilaOperacion,cantOperaciones);
-		cantOperaciones++;
-		F_ind = crear_terceto(constanteAux,"_","_");
-		apilar(&pilaFactor,F_ind);
-	}	
-| PARENTESIS_ABIERTO expresion_numerica PARENTESIS_CERRADO {
-		printf("factor numerico -> (expresion numerica) OK\n\n");
-		F_ind = desapilar(&pilaExpresion);
-		apilar(&pilaFactor,F_ind);
-	}
-	
-lista_ids_filter: 
-lista_ids_filter COMA ID {
-		printf("%s\n", yylval.str_val);
-		guardarEnVectorTablaSimbolos(2,yylval.str_val);
-		printf("lista_ids -> lista_ids , ID OK\n\n");
-		crear_tercetos_filter();
-	}
-| ID {
-		printf("%s\n", yylval.str_val);
-		guardarEnVectorTablaSimbolos(2,yylval.str_val);
-		printf("lista_ids -> ID OK\n\n");
-		crear_tercetos_filter();
-	}
-
-////////********Asignacion Multiple *********////////////
 
 lista_ids_asignMultiple: 
 lista_ids_asignMultiple COMA ID {
@@ -992,115 +1082,115 @@ lista_ids_asignMultiple COMA ID {
 		//No existe en tabla de simbolo
 		printf("No existe en tabla de simbolo \n\n");
 	}else{
-		
+
 		strcpy(vector_asig_multiple[indice_asign_multiple].nombre,yylval.str_val);
 		strcpy(vector_asig_multiple[indice_asign_multiple].tipo,validaTipo(yylval.str_val));
 		indice_asign_multiple++;
-		
+
 	}
-	
 }
+
 | ID {
 	printf("%s\n", yylval.str_val);
 	printf("lista_ids_asignMultiple -> ID OK\n\n");
-	
+
 	if(strcmp(yylval.str_val,validaTipo(yylval.str_val))==0){
 		//No existe en tabla de simbolo
 		printf("No existe en tabla de simbolo \n\n");
 	}else{
-		
+
 		strcpy(vector_asig_multiple[indice_asign_multiple].nombre,yylval.str_val);
 		strcpy(vector_asig_multiple[indice_asign_multiple].tipo,validaTipo(yylval.str_val));
 		indice_asign_multiple++;
-		
+
 	}	
 }
-
 
 lista_expresiones_asignMultiple : lista_expresiones_asignMultiple COMA expresion_asignMultiple
 | expresion_asignMultiple
 
-
 expresion_asignMultiple: 
-	expresion_asignMultiple OPERACION_SUMA termino_asignMultiple	{
-			printf("expresion_asignMultiple -> exp + term OK \n\n");
-			
-		} 
-	| expresion_asignMultiple OPERACION_RESTA termino_asignMultiple 	{
-			printf("expresion_asignMultiple -> exp - term OK \n\n");
-			
-		}
-| termino_asignMultiple	{
-			printf("expresion_asignMultiple -> term OK \n\n");
+termino_asignMultiple	{
+	printf("expresion_asignMultiple -> term OK \n\n");
+}
 
-		}
+/*						VER SI SE SACA ESTA OPERACION
+
+| expresion_asignMultiple OPERACION_SUMA termino_asignMultiple	{
+	printf("expresion_asignMultiple -> exp + term OK \n\n");
+
+} 
+| expresion_asignMultiple OPERACION_RESTA termino_asignMultiple 	{
+	printf("expresion_asignMultiple -> exp - term OK \n\n");
+}
+*/
 
 termino_asignMultiple: 
-	termino_asignMultiple OPERACION_MULTIPLICACION factor_asignMultiple {
-			printf("term -> term * factor_asignMultiple OK \n\n");
-			
-		} 
+
+factor_asignMultiple{
+	printf("term -> factor_asignMultiple OK \n\n");
+}
+/*				VER SI SE SACA ESTA OPERACION
+
+termino_asignMultiple OPERACION_MULTIPLICACION factor_asignMultiple {
+	printf("term -> term * factor_asignMultiple OK \n\n");
+
+} 
 | termino_asignMultiple OPERACION_DIVISION factor_asignMultiple 	{
-			printf("term -> term / factor_asignMultiple OK \n\n");
-			
-		}
-| factor_asignMultiple{
-			printf("term -> factor_asignMultiple OK \n\n");
-			
-		}
+	printf("term -> term / factor_asignMultiple OK \n\n");
+
+}
+*/
 
 factor_asignMultiple: ID 
-| ENTERO {	
-		printf("factor_asignMultiple -> Cte_entera OK\n\n");
-		
-		if(indice_expresiones_asign_multiple < indice_asign_multiple)
-		{
-			
-			if(strcmp(vector_asig_multiple[indice_expresiones_asign_multiple].tipo,"ENTERO") == 0)
-			{	
-				agregarConstante(yylval.str_val,CteInt);
-				strcpy(constanteAux,"_");
-				strcat(constanteAux,yylval.str_val);
-				strcpy(constanteAux + strlen(constanteAux), "\0");
-				crear_terceto("=",vector_asig_multiple[indice_expresiones_asign_multiple].nombre,constanteAux);
-				indice_expresiones_asign_multiple++;
-			}else{
-			
-				sprintf(mensajeDeError, "La Variable: %s No es de tipo entero.\n", vector_asig_multiple[indice_expresiones_asign_multiple].nombre);
-				mostrarError(mensajeDeError);
-			
-			}
-			
+| ENTERO 
+{	
+	printf("factor_asignMultiple -> Cte_entera OK\n\n");
+
+	if(indice_expresiones_asign_multiple < indice_asign_multiple)
+	{
+
+		if(strcmp(vector_asig_multiple[indice_expresiones_asign_multiple].tipo,"ENTERO") == 0)
+		{	
+			agregarConstante(yylval.str_val,CteInt,constanteEntera);
+			strcpy(constanteAux,"_");
+			strcat(constanteAux,yylval.str_val);
+			strcpy(constanteAux + strlen(constanteAux), "\0");
+			crear_terceto("=",vector_asig_multiple[indice_expresiones_asign_multiple].nombre,constanteAux);
+			indice_expresiones_asign_multiple++;
+		}else{
+
+			sprintf(mensajeDeError, "La Variable: %s No es de tipo entero.\n", vector_asig_multiple[indice_expresiones_asign_multiple].nombre);
+			mostrarError(mensajeDeError);
+
 		}
-		
+
 	}
+
+}
 | REAL {
-		printf("factor_asignMultiple -> Cte_Real OK\n\n");
-		if(indice_expresiones_asign_multiple < indice_asign_multiple)
-		{
-			
-			if(strcmp(vector_asig_multiple[indice_expresiones_asign_multiple].tipo,"REAL") == 0)
-			{	
-				agregarConstante(yylval.str_val,CteReal);
-				strcpy(constanteAux,"_");
-				strcat(constanteAux,yylval.str_val);
-				strcpy(constanteAux + strlen(constanteAux), "\0");
-				crear_terceto("=",vector_asig_multiple[indice_expresiones_asign_multiple].nombre,constanteAux);
-				indice_expresiones_asign_multiple++;
-			}else{
-			
-				sprintf(mensajeDeError, "La Variable: %s No es de tipo real.\n", vector_asig_multiple[indice_expresiones_asign_multiple].nombre);
-				mostrarError(mensajeDeError);
-			}
-			
+	printf("factor_asignMultiple -> Cte_Real OK\n\n");
+	if(indice_expresiones_asign_multiple < indice_asign_multiple)
+	{
+
+		if(strcmp(vector_asig_multiple[indice_expresiones_asign_multiple].tipo,"REAL") == 0)
+		{	
+			agregarConstante(yylval.str_val,CteReal,constanteFloat);
+			strcpy(constanteAux,"_");
+			strcat(constanteAux,yylval.str_val);
+			strcpy(constanteAux + strlen(constanteAux), "\0");
+			crear_terceto("=",vector_asig_multiple[indice_expresiones_asign_multiple].nombre,constanteAux);
+			indice_expresiones_asign_multiple++;
+		}else{
+
+			sprintf(mensajeDeError, "La Variable: %s No es de tipo real.\n", vector_asig_multiple[indice_expresiones_asign_multiple].nombre);
+			mostrarError(mensajeDeError);
 		}
-	}	
-| PARENTESIS_ABIERTO expresion_asignMultiple PARENTESIS_CERRADO {
-		printf("factor_asignMultiple -> (expresion_asignMultiple) OK\n\n");
+
 	}
+}	
 
 
-	
 %%
 
 int main(int argc,char *argv[]){
@@ -1121,8 +1211,9 @@ int main(int argc,char *argv[]){
 
 		yyparse();
 
-		guardarTabla();
-		escribe_arch_tercetos();
+		guardarTabla();					// archivos de tabla de simbolos
+		escribe_arch_tercetos();		// archivo del codigo intermedio
+		escribirAssembler();			// archivo del codigo assembler
 	}
 	fclose(yyin);
 	return 0;
@@ -1139,7 +1230,7 @@ int yyerror(void){
 	exit (1);
 }
 
-void guardarEnVectorTablaSimbolos(int opc, char * cad){
+void guardarEnVectorTablaSimbolos(int opc, char * cad){								// si mando 1 guardo el tipo, sino guardo el nombre
 	if(finBloqueDeclaraciones==0){
 		if(opc==1){
 			strcpy(tablaDeSimbolos[pos_td].tipo,cad);
@@ -1232,15 +1323,12 @@ void guardarTabla(){
 
 	fprintf(arch,"%-30s%-20s%-30s%-5s\n","NOMBRE","TIPO","VALOR", "LONGITUD");
 	fprintf(arch, "======================================================================================================\n");
-	//lo mismo que guarda en archivo lo imprimo en pantalla
-	//printf("%-30s%-20s%-30s%-5s\n","NOMBRE","TIPO","VALOR", "LONGITUD");
-	//printf("======================================================================================================\n");
 	// Recorro la tabla
 	int i = 0;
 	while (i < cant_ctes) {
 
 		fprintf(arch, "%-30s%-20s%-30s%-5d\n", &(tablaDeSimbolos[i].nombre), &(tablaDeSimbolos[i].tipo) , &(tablaDeSimbolos[i].valor), tablaDeSimbolos[i].longitud);
-		//printf( "%-30s%-20s%-30s%-5d\n", &(tablaDeSimbolos[i].nombre), &(tablaDeSimbolos[i].tipo) , &(tablaDeSimbolos[i].valor), tablaDeSimbolos[i].longitud);
+		printf("%-30s%-20s%-30s%-5d\n", &(tablaDeSimbolos[i].nombre), &(tablaDeSimbolos[i].tipo) , &(tablaDeSimbolos[i].valor), tablaDeSimbolos[i].TipodeDato_numerico);
 		i++;
 	}
 
@@ -1250,7 +1338,7 @@ void guardarTabla(){
 
 /* Agregar una constante a la tabla de simbolos */
 
-void agregarConstante(char* nombre,char* tipo) {
+void agregarConstante(char* nombre,char* tipo, int tipo_numerico) {
 	printf("Agregar cte %s: %s .\n\n",nombre, tipo);
 
 	// Formateo la cadena
@@ -1270,7 +1358,10 @@ void agregarConstante(char* nombre,char* tipo) {
 		strcpy(tablaDeSimbolos[cant_ctes].nombre, nombre_nuevo);
 
 		// Agrego el tipo (Se utiliza para imprimir tabla)
-		strcpy(tablaDeSimbolos[cant_ctes].tipo, tipo);	
+		strcpy(tablaDeSimbolos[cant_ctes].tipo, tipo);
+
+		// Agrego el tipo numerico para comparaciones mas sencillas 
+		tablaDeSimbolos[cant_ctes].TipodeDato_numerico = tipo_numerico;
 
 		// Agrego valor
 		strcpy(tablaDeSimbolos[cant_ctes].valor, nombre_nuevo+1);		// Omito el _
@@ -1318,8 +1409,9 @@ void escribe_arch_tercetos()
 	arch = fopen("intermedia.txt", "w+");
 
 	for(i = 0; i < indice_terceto; i++)
-	{
+	{	
 		aux =  vector_tercetos[i];
+		/*
 		if((strcmp(aux.te1,"_")==0 && strcmp(aux.te2,"_")==0) || (strcmp(aux.ope,"READ")==0 || strcmp(aux.ope,"PRINT")==0))					// si el primer y segundo operando es un guion bajo , grabo como esta
 		fprintf(arch, "[%d] (%s,%s,%s)\n", aux.nroTerceto, aux.ope,aux.te1, aux.te2 );
 		else
@@ -1334,7 +1426,9 @@ void escribe_arch_tercetos()
 			}
 
 		}
-
+		*/
+		fprintf(arch, "[%d] (%s,%s,%s)\n", aux.nroTerceto, aux.ope,aux.te1, aux.te2 );
+		
 	}
 	fclose(arch);
 }
@@ -1360,13 +1454,14 @@ char* validaTipo(char* id)
 		if(strcmp(id,tablaDeSimbolos[i].nombre)==0)
 		{		
 			return tablaDeSimbolos[i].tipo;
+			aux_tiponumerico = tablaDeSimbolos[i].TipodeDato_numerico;			// guardo en la variable global aux de tipo numerico, el tipo de la variable encontrada
 		}
 	}
-	
+
 	return id;
 }
 void invertir_salto(terceto* vector, int indice){
-	
+
 	printf("invertir el salto: %s\n", vector[indice].ope);
 	if(strcmp(vector[indice].ope,"JE")==0){
 		strcpy(vector[indice].ope,"JNE");
@@ -1420,7 +1515,7 @@ void crear_tercetos_filter(){
 				itoa(indice_terceto+3, bufferaux1,10);
 				crear_terceto(aux.ope,bufferaux1,"_");
 			}
-			
+
 		}
 		crear_terceto("=",nombreFilter,yylval.str_val);
 		cont_filter++;
@@ -1428,7 +1523,7 @@ void crear_tercetos_filter(){
 	}else{
 		sprintf(mensajeDeError, "Incompatibilidad de tipos de la variable:%s con la comparacion del filter\n",yylval.str_val );
 		mostrarError(mensajeDeError);
-	
+
 	}
 }
 
@@ -1444,3 +1539,117 @@ void agregar_variable_filter_a_tabla(char* nombre, char* tipo){
 	}
 }
 
+void completarTipoNumerico()
+{
+	int i;
+	for(i=0;i<cantidadTokens;i++)
+	{		
+		if(strcmp(tablaDeSimbolos[i].tipo,"ENTERO")==0)
+		{		
+			tablaDeSimbolos[i].TipodeDato_numerico = variableEntera;
+		}
+		if(strcmp(tablaDeSimbolos[i].tipo,"REAL")==0)
+		{		
+			tablaDeSimbolos[i].TipodeDato_numerico = variableFloat;
+		}
+		if(strcmp(tablaDeSimbolos[i].tipo,"CADENA")==0)
+		{		
+			tablaDeSimbolos[i].TipodeDato_numerico = variableString;
+		}
+	}
+
+}
+
+void escribirAssembler(){
+
+	archivoAssembler = fopen("Final.asm", "w");
+	escribirCabecera();
+	escribirTablaDeSimbolos();
+
+	procesarCodigoIntermedio();
+	//escribirLista(listaCodigo,archivoAssembler);
+	escribirFinal();
+	printf("Assembler OK.\n");
+	fclose(archivoAssembler); 
+}
+
+void escribirCabecera() {
+	fprintf(archivoAssembler, "include macros2.asm \n");
+	fprintf(archivoAssembler, "include number.asm \n");
+
+	fprintf(archivoAssembler, ".MODEL LARGE\n");
+	fprintf(archivoAssembler, ".386\n");
+	fprintf(archivoAssembler, ".STACK 200h\n\n");
+
+	fprintf(archivoAssembler, "MAXTEXTSIZE EQU 32\n\n");
+}
+
+void escribirTablaDeSimbolos() {
+	char valorAuxiliar[100];
+
+	fprintf(archivoAssembler, ".DATA\n");
+	fprintf(archivoAssembler, "NEW_LINE DB 0AH,0DH,'$'\n");
+	fprintf(archivoAssembler, "CWprevio DW ?\n");
+
+	for(i=0; i < cant_ctes; i++)
+	{
+		fprintf(archivoAssembler, "%s ", tablaDeSimbolos[i].nombre);
+		strcpy(valorAuxiliar, tablaDeSimbolos[i].valor);
+
+		switch(tablaDeSimbolos[i].TipodeDato_numerico){
+		case variableEntera:
+			fprintf(archivoAssembler, "dd %s\n", valorAuxiliar);
+			break;
+
+		case variableFloat:
+			fprintf(archivoAssembler, "dd %s\n", valorAuxiliar);
+			break;
+
+		case variableString:
+			fprintf(archivoAssembler, "db \"%s\", '$'\n", valorAuxiliar);        
+			break;
+
+		case constanteEntera:
+			strcpy(bufferaux1,".0");				// transformo la constante int en un float para poder usar FLD en el coProcesador
+			strcat(valorAuxiliar,bufferaux1);
+			fprintf(archivoAssembler, "dd %s\n", valorAuxiliar);
+			break;
+
+		case constanteFloat:
+			fprintf(archivoAssembler, "dd %s\n", valorAuxiliar);
+			break;
+
+		case constanteString:
+			fprintf(archivoAssembler, "db \"%s\", '$'\n", valorAuxiliar);
+			break;
+
+		default: //Es una variable int, float o puntero a string
+			fprintf(archivoAssembler, "dd ?\n");
+		}
+	}
+
+	fprintf(archivoAssembler, "\n");
+	fprintf(archivoAssembler, ".CODE\n\nSTART:\n\nMOV AX, @DATA\nMOV DS, AX\nFINIT\n\n");
+}
+
+void escribirFinal(){
+  fprintf(archivoAssembler, "\nMOV AH, 1\nINT 21h\nMOV AX, 4C00h\nINT 21h\n\nEND START\n");
+}
+
+void procesarCodigoIntermedio()
+{
+FILE* arch;
+arch = fopen("intermedia.txt", "r");
+char linea[50];
+fgets(linea, sizeof (linea),arch);
+
+while(!feof(arch))
+{
+
+// PONER ACA TODO EL CODIGO DE GENERACION DE ASSEMBLER DESDE INTERMEDIA
+
+fgets(linea, sizeof (linea),arch);
+}
+
+fclose(arch);
+}
