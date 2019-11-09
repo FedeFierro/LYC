@@ -9,6 +9,8 @@ MAXTEXTSIZE EQU 32
 .DATA
 NEW_LINE DB 0AH,0DH,'$'
 CWprevio DW ?
+@msj_entero db "Ingrese un valor entero", '$' 
+@msj_real db "Ingrese un valor real", '$' 
 abbaa dd ?
 berta db "", '$'
 b dd ?
@@ -30,7 +32,7 @@ _2 dd 2.0
 _27_123456789 dd 27.123456789
 _5 dd 5.0
 _1 dd 1.0
-@aux13 dd ?
+@aux17 dd ?
 _10 dd 10.0
 _hola db "hola", '$'
 _chau db "chau", '$'
@@ -62,14 +64,28 @@ fstp cont
 DisplayFloat cont,1
 newLine
 
+DisplayString @msj_entero 
+int 21h 
+newLine 1
+GetFloat abbaa 
+DisplayFloat abbaa,1
+newLine
+
+DisplayString @msj_real 
+int 21h 
+newLine 1
+GetFloat e 
+DisplayFloat e,1
+newLine
+
 fld _5
 fstp a
-etiqueta_11:
+etiqueta_15:
 fld a
 fld _1
 fadd
-fstp @aux13
-fld @aux13
+fstp @aux17
+fld @aux17
 fstp a
 DisplayFloat a,1
 newLine
@@ -80,7 +96,7 @@ fxch
 fcomp
 fstsw ax
 sahf
-JNE etiqueta_11
+JNE etiqueta_15
 
 fld c
 fld _10
@@ -88,30 +104,30 @@ fxch
 fcomp
 fstsw ax
 sahf
-JAE etiqueta_25
+JAE etiqueta_29
 
 DisplayFloat c,1
 newLine
 
-etiqueta_25:
+etiqueta_29:
 fld c
 fld _10
 fxch
 fcomp
 fstsw ax
 sahf
-JA etiqueta_31
+JA etiqueta_35
 
 DisplayString _hola,1
 newLine
 
-JMP etiqueta_32
+JMP etiqueta_36
 
-etiqueta_31:
+etiqueta_35:
 DisplayString _chau,1
 newLine
 
-etiqueta_32:
+etiqueta_36:
 DisplayString _cadenuski,1
 newLine
 
@@ -121,7 +137,7 @@ fxch
 fcomp
 fstsw ax
 sahf
-JAE etiqueta_42
+JAE etiqueta_46
 
 fld q
 fld _20
@@ -129,12 +145,12 @@ fxch
 fcomp
 fstsw ax
 sahf
-JNA etiqueta_42
+JNA etiqueta_46
 
 DisplayString _CONDICION_AND,1
 newLine
 
-etiqueta_42:
+etiqueta_46:
 fld _100
 fstp q
 fld _200

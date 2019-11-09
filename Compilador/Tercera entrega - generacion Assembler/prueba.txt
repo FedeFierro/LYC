@@ -16,6 +16,14 @@ q:=50;					--/ ASIGNACIONES SIMPLES/--
 c:=4+2;
 cont:=27.123456789;
 PRINT cont
+
+READ abbaa
+PRINT abbaa
+
+READ e
+PRINT e
+
+
 a:=5;
 REPEAT						--/ REPEAT /--
 a:=a+1;

@@ -1607,6 +1607,11 @@ void escribirTablaDeSimbolos() {
 	fprintf(archivoAssembler, "NEW_LINE DB 0AH,0DH,'$'\n");
 	fprintf(archivoAssembler, "CWprevio DW ?\n");
 
+	//CREO LAS VARIABLES PARA MENSAJES DEL READ
+	
+	fprintf(archivoAssembler, "@msj_entero db \"Ingrese un valor entero\", '$' \n");
+	fprintf(archivoAssembler, "@msj_real db \"Ingrese un valor real\", '$' \n");
+	
 	for(i=0; i < cant_ctes; i++)
 	{
 		char nombre [strlen(tablaDeSimbolos[i].nombre)];
@@ -1782,8 +1787,21 @@ void procesarCodigoIntermedio()
 		case 7:
 			fprintf(archivoAssembler,"DisplayString %s,1\nnewLine\n\n", vector_tercetos[i].te1);
 			break;
-
+		case 8: //Read enteros
+			fprintf(archivoAssembler,"DisplayString @msj_entero \n");
+			fprintf(archivoAssembler,"int 21h \n");
+			fprintf(archivoAssembler,"newLine 1\n");
+			fprintf(archivoAssembler,"GetFloat %s \n",vector_tercetos[i].te1);
+			break;
+		case 9: //Read Real
+			fprintf(archivoAssembler,"DisplayString @msj_real \n");
+			fprintf(archivoAssembler,"int 21h \n");
+			fprintf(archivoAssembler,"newLine 1\n");
+			fprintf(archivoAssembler,"GetFloat %s \n",vector_tercetos[i].te1);
+			break;
+			
 		}
+		
 		
 		if(strcmp(vector_tercetos[i].ope,"CMP")==0)						// terceto de COMPARACION
 		fprintf(archivoAssembler,"fld %s\nfld %s\nfxch\nfcomp\nfstsw ax\nsahf\n", vector_tercetos[i].te1,vector_tercetos[i].te2);
@@ -1844,7 +1862,15 @@ int esOperacion(int indice)
 		else
 		return 7;						// sino es de tipo CADENA
 	}
-	
+	if(strcmp(vector_tercetos[indice].ope,"READ")==0){
+		validaTipo(vector_tercetos[indice].te1);
+		if(aux_tiponumerico==1){ //Variable Entera
+			return 8;
+		}
+		if(aux_tiponumerico==2){ //Variable Float
+			return 9;
+		}
+	}
 	return 0;
 }
 
