@@ -367,22 +367,6 @@ asignacion: ID {strcpy(idAux,yylval.str_val);} OPERADOR_ASIGNACION expresion PUN
 	}
 }
 
-| ID {strcpy(idAux,yylval.str_val);
-	strcpy(tipoVariable,validaTipo(idAux));
-} OPERADOR_ASIG_STRING 														// operador_asig_string -> =
-{
-	if(strcmp(tipoVariable,"CADENA")!=0)
-	{sprintf(mensajeDeError, "La Variable: %s No es de tipo CADENA.\n", idAux);
-		mostrarError(mensajeDeError);
-	}
-} 	CADENA PUNTO_Y_COMA	{printf("asignacion_string -> Cte_String OK \n\n");
-	agregarConstante(yylval.str_val,CteString,constanteString);
-	strcpy(constanteAux,"_");
-	strcat(constanteAux,yylval.str_val);
-	strcpy(constanteAux + strlen(constanteAux), "\0");
-	crear_terceto("=",idAux,constanteAux);
-}
-
 expresion:  expresion OPERACION_SUMA termino	
 {
 	printf("expresion -> exp + term OK \n\n");
@@ -442,7 +426,7 @@ expresion:  expresion OPERACION_SUMA termino
 	apilar(&pilaExpresion,E_ind);
 }
 
-termino:	termino OPERACION_MULTIPLICACION factor 
+termino: termino OPERACION_MULTIPLICACION factor 
 {
 	printf("term -> term * factor OK \n\n");
 	aux=desapilar(&pilaOperacion);
@@ -545,10 +529,24 @@ factor: ID  {
 	apilar(&pilaOperacion,cantOperaciones);
 	cantOperaciones++;
 	
-			replace_char(constanteAux,'.', '_');
+	replace_char(constanteAux,'.', '_');
 	F_ind = crear_terceto(constanteAux,"_","_");
 	apilar(&pilaFactor,F_ind);
-}	
+}
+|CADENA {
+
+	agregarConstante(yylval.str_val,CteString,constanteString);
+	strcpy(constanteAux,"_");
+	strcat(constanteAux,yylval.str_val);
+	strcpy(constanteAux + strlen(constanteAux), "\0");
+	strcpy(vector_operacion[cantOperaciones].id,constanteAux);
+	strcpy(vector_operacion[cantOperaciones].tipo,"CADENA");
+	vector_operacion[cantOperaciones].tipoNumerico = 6;
+	apilar(&pilaOperacion,cantOperaciones);
+	cantOperaciones++;
+	F_ind = crear_terceto(constanteAux,"_","_");
+	apilar(&pilaFactor,F_ind);
+}
 
 | PARENTESIS_ABIERTO expresion PARENTESIS_CERRADO	
 {
@@ -831,7 +829,7 @@ PARENTESIS_ABIERTO condicion_filter COMA  CORCHETE_ABIERTO {
 	char tipo[10];
 	int auxOpe = desapilar(&pilaOperacion);
 	agregar_variable_filter_a_tabla(nombreFilter, tipoCondicion1);
-	crear_terceto("=",nombreFilter,"0"); //valor por default si nunguna cumple la condicion sale por este
+	crear_terceto("=",nombreFilter,"_0"); //valor por default si nunguna cumple la condicion sale por este
 	int i=0;
 	int filter_i;
 	itoa(indice_terceto,bufferaux1,10);
@@ -1635,7 +1633,7 @@ void escribirTablaDeSimbolos() {
 			break;
 
 		case variableString:
-			fprintf(archivoAssembler, "db \"%s\", '$'\n", valorAuxiliar);        
+			fprintf(archivoAssembler, "dd %s?\n", valorAuxiliar);        
 			break;
 
 		case constanteEntera:
@@ -1800,6 +1798,9 @@ void procesarCodigoIntermedio()
 			fprintf(archivoAssembler,"newLine 1\n");
 			fprintf(archivoAssembler,"GetFloat %s \n",vector_tercetos[i].te1);
 			break;
+		case 10:
+			fprintf(archivoAssembler,"LEA EAX, %s\n MOV %s , EAX\n", vector_tercetos[i].te2, vector_tercetos[i].te1);
+			break;
 			
 		}
 		
@@ -1853,8 +1854,13 @@ int esOperacion(int indice)
 	return 3;
 	if(strcmp(vector_tercetos[indice].ope,"/")==0)
 	return 4;
-	if(strcmp(vector_tercetos[indice].ope,"=")==0)
-	return 5;
+	if(strcmp(vector_tercetos[indice].ope,"=")==0){
+		validaTipo(vector_tercetos[indice].te1);
+		if(aux_tiponumerico==3 || aux_tiponumerico==6){
+			return 10;
+		}
+		return 5;
+	}
 	if(strcmp(vector_tercetos[indice].ope,"PRINT")==0)
 	{
 		validaTipo(vector_tercetos[indice].te1);
@@ -1872,6 +1878,7 @@ int esOperacion(int indice)
 			return 9;
 		}
 	}
+	//OJO NO USAR 10 YA HAY UN 10 en la sentecia que devuelve 5
 	return 0;
 }
 

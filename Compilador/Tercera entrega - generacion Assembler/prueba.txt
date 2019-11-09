@@ -12,6 +12,9 @@ VAR
 [INT]:[valorentero]
 ENDVAR
 
+
+
+
 q:=50;					--/ ASIGNACIONES SIMPLES/--
 c:=4+2;
 cont:=27.123456789;
@@ -23,6 +26,8 @@ PRINT abbaa
 READ e
 PRINT e
 
+pepp:="Hola12";
+
 --/FILTER/--
 var1:=1;
 c:=3;
@@ -31,6 +36,14 @@ abbaa:=FILTER(_>3 ,[var1,c,d]);
 PRINT abbaa
 
 PRINT "FIN_FILTER_1"
+
+a:= 4+5*3;
+PRINT a
+
+estoesunid:=(a-1)/3;
+PRINT estoesunid
+
+
 
 e:=1.3323;
 b:=3.4555;
@@ -46,6 +59,14 @@ berta:=FILTER(NOT(_==1.3323) ,[e,cont,b]);
 PRINT berta
 
 PRINT "FIN_FILTER_3"
+
+e:=1.3323;
+b:=3.4555;
+cont:=7.115;
+berta:=FILTER(_>3.0 AND _<=3.3 ,[e,b,cont]);
+PRINT berta
+
+PRINT "FIN_FILTER_4"
 
 a:=5;
 REPEAT						--/ REPEAT /--

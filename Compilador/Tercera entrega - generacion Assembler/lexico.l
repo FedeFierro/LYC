@@ -43,7 +43,7 @@ DEFAULT 				(.)
 {COMENTARIOS}				{}
 {COMENTARIOS_ANIDADOS}		{}
 
-"="							{return OPERADOR_ASIG_STRING;}
+
 "REPEAT"   					{return REPEAT;}
 "UNTIL"						{return UNTIL;}
 "+"							{return OPERACION_SUMA;}

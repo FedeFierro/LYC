@@ -19,11 +19,17 @@ _4                            CTE_INT             4                             
 _2                            CTE_INT             2                             0    
 @aux4                         @                                                 0    
 _27.123456789                 CTE_REAL            27.123456789                  0    
+_Hola12                       CTE_STRING          Hola12                        6    
 _1                            CTE_INT             1                             0    
 _3                            CTE_INT             3                             0    
 _0                            CTE_INT             0                             0    
 @Filter1                      ENTERO                                            0    
 _FIN_FILTER_1                 CTE_STRING          FIN_FILTER_1                  12   
+_5                            CTE_INT             5                             0    
+@aux42                                                                          0    
+@aux43                                                                          0    
+@aux48                                                                          0    
+@aux50                                                                          0    
 _1.3323                       CTE_REAL            1.3323                        0    
 _3.4555                       CTE_REAL            3.4555                        0    
 _7.115                        CTE_REAL            7.115                         0    
@@ -33,8 +39,10 @@ _7.11                         CTE_REAL            7.11                          
 _FIN_FILTER_2                 CTE_STRING          FIN_FILTER_2                  12   
 @Filter3                      REAL                                              0    
 _FIN_FILTER_3                 CTE_STRING          FIN_FILTER_3                  12   
-_5                            CTE_INT             5                             0    
-@aux96                                                                          0    
+_3.3                          CTE_REAL            3.3                           0    
+@Filter4                      REAL                                              0    
+_FIN_FILTER_4                 CTE_STRING          FIN_FILTER_4                  12   
+@aux143                                                                         0    
 _10                           CTE_INT             10                            0    
 _hola                         CTE_STRING          hola                          4    
 _chau                         CTE_STRING          chau                          4    
