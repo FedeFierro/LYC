@@ -1,5 +1,5 @@
 VAR
-[INT,STRING,INT,FLOAT]:[abbaa,berta]					--/Mas tipos de datos que variables/--
+[INT,FLOAT,INT,FLOAT]:[abbaa,berta]					--/Mas tipos de datos que variables/--
 [FLOAT,INT]:[b,var1]
 [INT]:[a]
 [INT,INT,FLOAT,FLOAT]:[c,d,e,cont]
@@ -23,6 +23,29 @@ PRINT abbaa
 READ e
 PRINT e
 
+--/FILTER/--
+var1:=1;
+c:=3;
+d:=4;
+abbaa:=FILTER(_>3 ,[var1,c,d]);
+PRINT abbaa
+
+PRINT "FIN_FILTER_1"
+
+e:=1.3323;
+b:=3.4555;
+cont:=7.115;
+berta:=FILTER(_>3.0 AND _<=7.11 ,[e,b,cont]);
+PRINT berta
+
+PRINT "FIN_FILTER_2"
+e:=1.3323;
+b:=3.4555;
+cont:=7.115;
+berta:=FILTER(NOT(_==1.3323) ,[e,cont,b]);
+PRINT berta
+
+PRINT "FIN_FILTER_3"
 
 a:=5;
 REPEAT						--/ REPEAT /--

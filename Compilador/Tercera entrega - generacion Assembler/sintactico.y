@@ -1086,6 +1086,7 @@ factor_numerico: ID {
 	printf("TIPO %s\n",vector_operacion[cantOperaciones].tipo);
 	apilar(&pilaOperacion,cantOperaciones);
 	cantOperaciones++;
+	replace_char(constanteAux,'.','_');
 	F_ind = crear_terceto(constanteAux,"_","_");
 	apilar(&pilaFactor,F_ind);
 }	
