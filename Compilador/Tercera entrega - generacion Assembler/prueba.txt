@@ -14,7 +14,8 @@ ENDVAR
 
 q:=50;					--/ ASIGNACIONES SIMPLES/--
 c:=4+2;
-
+cont:=27.123456789;
+PRINT cont
 a:=5;
 REPEAT						--/ REPEAT /--
 a:=a+1;

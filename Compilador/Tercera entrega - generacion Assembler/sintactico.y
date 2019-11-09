@@ -75,6 +75,7 @@
 	void prepararAssembler();
 	int esOperacion();
 	int esSalto();
+	void replace_char(char* str, char find, char replace);
 
 
 	int cantidadTokens = 0;
@@ -543,6 +544,8 @@ factor: ID  {
 	printf("TIPO %s\n",vector_operacion[cantOperaciones].tipo);
 	apilar(&pilaOperacion,cantOperaciones);
 	cantOperaciones++;
+	
+			replace_char(constanteAux,'.', '_');
 	F_ind = crear_terceto(constanteAux,"_","_");
 	apilar(&pilaFactor,F_ind);
 }	
@@ -1606,7 +1609,14 @@ void escribirTablaDeSimbolos() {
 
 	for(i=0; i < cant_ctes; i++)
 	{
-		fprintf(archivoAssembler, "%s ", tablaDeSimbolos[i].nombre);
+		char nombre [strlen(tablaDeSimbolos[i].nombre)];
+		
+		strcpy(nombre,  tablaDeSimbolos[i].nombre);
+		if(tablaDeSimbolos[i].TipodeDato_numerico==constanteFloat){
+			replace_char(nombre,'.', '_');
+		}
+		
+		fprintf(archivoAssembler, "%s ", nombre);
 		strcpy(valorAuxiliar, tablaDeSimbolos[i].valor);
 
 		switch(tablaDeSimbolos[i].TipodeDato_numerico){
@@ -1735,14 +1745,14 @@ void prepararAssembler()
 
 void procesarCodigoIntermedio()
 {
-
+	
 	for(i=0;i< indice_terceto;i++)
 	{		
 		if(vector_tercetos[i].esEtiqueta == 99)
 		{
 			fprintf(archivoAssembler,"etiqueta_%d:\n",i);		
 		}
-		
+	
 		switch(esOperacion(i))
 		{
 		case 1:
@@ -1872,4 +1882,12 @@ void agregarAuxAssembler(char* var_aux)
 
 void escribirFinal(){
 	fprintf(archivoAssembler, "\nMOV AH, 1\nINT 21h\nMOV AX, 4C00h\nINT 21h\n\nEND START\n");
+}
+
+void replace_char(char* str, char find, char replace){
+    char *current_pos = strchr(str,find);
+    while (current_pos){
+        *current_pos = replace;
+        current_pos = strchr(current_pos,find);
+    }
 }

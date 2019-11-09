@@ -27,9 +27,10 @@ _50 dd 50.0
 _4 dd 4.0
 _2 dd 2.0
 @aux4 dd ?
+_27_123456789 dd 27.123456789
 _5 dd 5.0
 _1 dd 1.0
-@aux10 dd ?
+@aux13 dd ?
 _10 dd 10.0
 _hola db "hola", '$'
 _chau db "chau", '$'
@@ -56,14 +57,19 @@ fadd
 fstp @aux4
 fld @aux4
 fstp c
+fld _27_123456789
+fstp cont
+DisplayFloat cont,1
+newLine
+
 fld _5
 fstp a
-etiqueta_8:
+etiqueta_11:
 fld a
 fld _1
 fadd
-fstp @aux10
-fld @aux10
+fstp @aux13
+fld @aux13
 fstp a
 DisplayFloat a,1
 newLine
@@ -74,7 +80,7 @@ fxch
 fcomp
 fstsw ax
 sahf
-JNE etiqueta_8
+JNE etiqueta_11
 
 fld c
 fld _10
@@ -82,30 +88,30 @@ fxch
 fcomp
 fstsw ax
 sahf
-JAE etiqueta_22
+JAE etiqueta_25
 
 DisplayFloat c,1
 newLine
 
-etiqueta_22:
+etiqueta_25:
 fld c
 fld _10
 fxch
 fcomp
 fstsw ax
 sahf
-JA etiqueta_28
+JA etiqueta_31
 
 DisplayString _hola,1
 newLine
 
-JMP etiqueta_29
+JMP etiqueta_32
 
-etiqueta_28:
+etiqueta_31:
 DisplayString _chau,1
 newLine
 
-etiqueta_29:
+etiqueta_32:
 DisplayString _cadenuski,1
 newLine
 
@@ -115,7 +121,7 @@ fxch
 fcomp
 fstsw ax
 sahf
-JAE etiqueta_39
+JAE etiqueta_42
 
 fld q
 fld _20
@@ -123,12 +129,12 @@ fxch
 fcomp
 fstsw ax
 sahf
-JNA etiqueta_39
+JNA etiqueta_42
 
 DisplayString _CONDICION_AND,1
 newLine
 
-etiqueta_39:
+etiqueta_42:
 fld _100
 fstp q
 fld _200
