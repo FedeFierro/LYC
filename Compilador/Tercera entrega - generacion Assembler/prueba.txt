@@ -1,10 +1,10 @@
 VAR
-[INT,STRING,INT,FLOAT]:[aaa,berta]					--/Mas tipos de datos que variables/--
+[INT,STRING,INT,FLOAT]:[abbaa,berta]					--/Mas tipos de datos que variables/--
 [FLOAT,INT]:[b,var1]
 [INT]:[a]
 [INT,INT,FLOAT,FLOAT]:[c,d,e,cont]
 [INT,INT,FLOAT,FLOAT]:[c,d,e,cont]
-[STRING,INT]:[pepp,jdf,x,y,z]					--/Mas variables que tipos de datos/--
+[STRING,INT]:[pepp,estoesunid,x,y,z]					--/Mas variables que tipos de datos/--
 [INT,INT,FLOAT,FLOAT]:[c,d,e,cont]				--/VARIABLES DUPLICADAS --/ COMENTARIO dentro de un comentario/--/--
 [INT]:[q]
 [FLOAT,INT]:[b,var1]
@@ -12,38 +12,33 @@ VAR
 [INT]:[valorentero]
 ENDVAR
 
-pepp="Hola";
+q:=50;					--/ ASIGNACIONES SIMPLES/--
+c:=4+2;
 
-[a,aaa,b]:=[10,20,5.5]
+a:=5;
+REPEAT						--/ REPEAT /--
+a:=a+1;
+PRINT a
+UNTIL (a==10)
 
-[a,aaa,b]:=[10,20,5.5]
-
-
-REPEAT
-	a:=a+1;
-	a:=a+1;
-	a:=a+1;
-	b:=12.3+11.5-3.8;
-	IF(a<var1)
-		cont :=37.5;
-	ENDIF
-UNTIL(a>10+5 OR b<5.0) 
-
-IF IF (a+c == 10) THEN
-	a:=33;
-ELSE
-	a:=35;
+IF(c<10)					--/ IF SIMPLE /--
+PRINT c
 ENDIF
 
-READ cont
+IF IF(c<=10)					--/ IF CON ELSE /--
+THEN
+PRINT "hola"
+ELSE
+PRINT "chau"
+ENDIF
 
-IF(a>=var1)
-		cont :=37.5;
-	ENDIF
+PRINT "cadenuski"
 
+IF(c<10 AND q>20)					--/ IF con AND /--
+PRINT "CONDICION_AND"
+ENDIF
 
-a:=FILTER(_>3 ,[a,var1,c,d]);
-a:=FILTER(NOT (_>7) ,[a,var1,c,d]);
-
-a:=FILTER( _> 3 AND _ <= 88 ,[a,var1,c,d]);
-a:=FILTER(_>7 OR _ == 3 ,[a,var1,c,d]);
+[q,c,d]:=[100,200,300]				--/ ASIGNACION MULTIPLE /--
+PRINT q
+PRINT c
+PRINT d
