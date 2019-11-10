@@ -115,7 +115,7 @@
 		int tipoNumerico;
 	} operacion;
 
-	operacion vector_operacion[100];
+	operacion vector_operacion[1000];
 	int cantOperaciones=0;
 
 	/* --------------- TERCETOS -------------- */
@@ -131,7 +131,7 @@
 		int esEtiqueta;
 	}	terceto;
 
-	terceto  vector_tercetos[200]; 		// vector de tercetos
+	terceto  vector_tercetos[1000]; 		// vector de tercetos
 	int indice_terceto = 0;	   			// Cantidad de elementos e indice de tercetos
 
 	int F_ind=0;
