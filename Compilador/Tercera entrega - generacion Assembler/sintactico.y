@@ -630,7 +630,7 @@ OPERADOR_ELSE bloque_programa OPERADOR_ENDIF
 	aux=desapilar(&pilaIf);
 	itoa(indice_terceto,bufferaux1,10);					// paso a char[] el valor indice
 	strcpy(vector_tercetos[aux].te1,bufferaux1);		// SALTO AL FINAL DEL ELSE
-
+	
 }			
 
 |	OPERADOR_IF OPERADOR_IF PARENTESIS_ABIERTO comparacion {apilar(&pilaIf,aux); apilar(&pilaIf,crear_terceto("JMP","_","_"));} OPERADOR_OR comparacion {apilar(&pilaIf,aux);} PARENTESIS_CERRADO {aux1=indice_terceto;} 
@@ -672,6 +672,7 @@ condicion:   PARENTESIS_ABIERTO comparacion PARENTESIS_CERRADO
 	aux2=desapilar(&pilaRepeat);
 	itoa(aux2,bufferaux1,10);		
 	strcpy(vector_tercetos[aux].te1,bufferaux1);
+	vector_tercetos[auxRepeat].esEtiqueta=99;
 
 }
 
@@ -680,7 +681,7 @@ condicion:   PARENTESIS_ABIERTO comparacion PARENTESIS_CERRADO
 	char posInicial[10];
 	itoa(auxRepeat, posInicial,10);
 	aux=crear_terceto("JMP",posInicial,"_");
-}OPERADOR_OR comparacion {apilar(&pilaRepeat,aux);} PARENTESIS_CERRADO {
+}	OPERADOR_OR comparacion {apilar(&pilaRepeat,aux);} PARENTESIS_CERRADO {
 
 	char posInicial[10];
 	itoa(auxRepeat, posInicial,10);
@@ -693,7 +694,7 @@ condicion:   PARENTESIS_ABIERTO comparacion PARENTESIS_CERRADO
 	aux2=desapilar(&pilaRepeat);
 	itoa(aux2+2,bufferaux1,10);		
 	strcpy(vector_tercetos[aux2].te1,bufferaux1);
-
+	vector_tercetos[auxRepeat].esEtiqueta=99;
 }
 | PARENTESIS_ABIERTO OPERADOR_NOT PARENTESIS_ABIERTO comparacion PARENTESIS_CERRADO PARENTESIS_CERRADO 
 {
@@ -702,6 +703,7 @@ condicion:   PARENTESIS_ABIERTO comparacion PARENTESIS_CERRADO
 	aux=desapilar(&pilaRepeat);
 	itoa(aux,bufferaux1,10);							// desapilo y pongo donde voy si la primer condicion es falsa
 	strcpy(vector_tercetos[indice_terceto-1].te1,bufferaux1);
+	vector_tercetos[auxRepeat].esEtiqueta=99;
 }
 
 
@@ -1582,7 +1584,6 @@ void escribirAssembler(){
 	archivoAssembler = fopen("Final.asm", "w");
 	escribirCabecera();
 	escribirTablaDeSimbolos();
-
 	procesarCodigoIntermedio();
 	escribirFinal();
 	printf("Assembler OK.\n");
@@ -1608,8 +1609,8 @@ void escribirTablaDeSimbolos() {
 
 	//CREO LAS VARIABLES PARA MENSAJES DEL READ
 	
-	fprintf(archivoAssembler, "@msj_entero db \"Ingrese un valor entero\", '$' \n");
-	fprintf(archivoAssembler, "@msj_real db \"Ingrese un valor real\", '$' \n");
+	fprintf(archivoAssembler, "@msj_entero db \"Ingrese un valor entero:\", '$'\n");
+	fprintf(archivoAssembler, "@msj_real db \"Ingrese un valor real:\", '$'\n");
 	
 	for(i=0; i < cant_ctes; i++)
 	{
@@ -1786,20 +1787,27 @@ void procesarCodigoIntermedio()
 		case 7:
 			fprintf(archivoAssembler,"DisplayString %s,1\nnewLine\n\n", vector_tercetos[i].te1);
 			break;
+			
 		case 8: //Read enteros
 			fprintf(archivoAssembler,"DisplayString @msj_entero \n");
 			fprintf(archivoAssembler,"int 21h \n");
 			fprintf(archivoAssembler,"newLine 1\n");
 			fprintf(archivoAssembler,"GetFloat %s \n",vector_tercetos[i].te1);
 			break;
+			
 		case 9: //Read Real
 			fprintf(archivoAssembler,"DisplayString @msj_real \n");
 			fprintf(archivoAssembler,"int 21h \n");
 			fprintf(archivoAssembler,"newLine 1\n");
 			fprintf(archivoAssembler,"GetFloat %s \n",vector_tercetos[i].te1);
 			break;
+			
 		case 10:
 			fprintf(archivoAssembler,"LEA EAX, %s\n MOV %s , EAX\n", vector_tercetos[i].te2, vector_tercetos[i].te1);
+			break;
+			
+			case 11:
+			fprintf(archivoAssembler,"DisplayFloat %s,3\nnewLine\n\n", vector_tercetos[i].te1);
 			break;
 			
 		}
@@ -1856,18 +1864,22 @@ int esOperacion(int indice)
 	return 4;
 	if(strcmp(vector_tercetos[indice].ope,"=")==0){
 		validaTipo(vector_tercetos[indice].te1);
-		if(aux_tiponumerico==3 || aux_tiponumerico==6){
+		if(aux_tiponumerico==3 || aux_tiponumerico==6){				// asignacion de una CADENA
 			return 10;
 		}
+		
 		return 5;
 	}
+	
 	if(strcmp(vector_tercetos[indice].ope,"PRINT")==0)
 	{
 		validaTipo(vector_tercetos[indice].te1);
-		if(aux_tiponumerico==1 || aux_tiponumerico==2 || aux_tiponumerico==4 || aux_tiponumerico==5)		// estos se tratan de variables o ctes int o float
+		if(aux_tiponumerico==1 || aux_tiponumerico==4)		// se trata de variables o ctes int
 		return 6;
+		if(aux_tiponumerico==2 || aux_tiponumerico==5)		// se trata de una variable o cte float
+		return 11;
 		else
-		return 7;						// sino es de tipo CADENA
+		return 7;											// sino es de tipo CADENA
 	}
 	if(strcmp(vector_tercetos[indice].ope,"READ")==0){
 		validaTipo(vector_tercetos[indice].te1);
@@ -1878,7 +1890,8 @@ int esOperacion(int indice)
 			return 9;
 		}
 	}
-	//OJO NO USAR 10 YA HAY UN 10 en la sentecia que devuelve 5
+	
+	//OJO NO USAR 10 YA HAY UN 10 en la sentencia que devuelve 5
 	return 0;
 }
 
