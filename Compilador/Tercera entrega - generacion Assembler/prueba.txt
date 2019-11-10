@@ -97,7 +97,7 @@ ENDIF
 
 [q,c,d]:=[100,200,300]				--/ ASIGNACION MULTIPLE /--
 
-IF(q==50 OR q >= (25*4))
+IF(q==50 OR q >= (25*4)) --/IF con OR y Expresion/--
 PRINT "SEG_IF"
 ENDIF
 

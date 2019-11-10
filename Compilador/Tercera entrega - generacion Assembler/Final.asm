@@ -9,8 +9,8 @@ MAXTEXTSIZE EQU 32
 .DATA
 NEW_LINE DB 0AH,0DH,'$'
 CWprevio DW ?
-@msj_entero db "Ingrese un valor entero", '$' 
-@msj_real db "Ingrese un valor real", '$' 
+@msj_entero db "Ingrese un valor entero:", '$'
+@msj_real db "Ingrese un valor real:", '$'
 abbaa dd ?
 berta dd ?
 b dd ?
@@ -92,7 +92,7 @@ fld @aux4
 fstp c
 fld _27_123456789
 fstp cont
-DisplayFloat cont,1
+DisplayFloat cont,3
 newLine
 
 DisplayString @msj_entero 
@@ -106,7 +106,7 @@ DisplayString @msj_real
 int 21h 
 newLine 1
 GetFloat e 
-DisplayFloat e,1
+DisplayFloat e,3
 newLine
 
 LEA EAX, _Hola12
@@ -267,7 +267,7 @@ fstp @Filter2
 etiqueta_80:
 fld @Filter2
 fstp berta
-DisplayFloat berta,1
+DisplayFloat berta,3
 newLine
 
 DisplayString _FIN_FILTER_2,1
@@ -323,7 +323,7 @@ fstp @Filter3
 etiqueta_104:
 fld @Filter3
 fstp berta
-DisplayFloat berta,1
+DisplayFloat berta,3
 newLine
 
 fld _1_2
@@ -435,7 +435,7 @@ fstp @Filter4
 etiqueta_149:
 fld @Filter4
 fstp berta
-DisplayFloat berta,1
+DisplayFloat berta,3
 newLine
 
 DisplayString _FIN_FILTER_4,1
