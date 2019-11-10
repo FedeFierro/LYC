@@ -49,11 +49,18 @@ _7_11 dd 7.11
 @Filter2 dd ?
 _FIN_FILTER_2 db "FIN_FILTER_2", '$'
 @Filter3 dd ?
+_1_2 dd 1.2
+_1_8 dd 1.8
+@aux110 dd ?
+_0_4555 dd 0.4555
+@aux112 dd ?
+_1_1 dd 1.1
+_ENTRA_POR_ACA db "ENTRA_POR_ACA", '$'
 _FIN_FILTER_3 db "FIN_FILTER_3", '$'
 _3_3 dd 3.3
 @Filter4 dd ?
 _FIN_FILTER_4 db "FIN_FILTER_4", '$'
-@aux143 dd ?
+@aux157 dd ?
 _10 dd 10.0
 _hola db "hola", '$'
 _chau db "chau", '$'
@@ -63,6 +70,9 @@ _CONDICION_AND db "CONDICION_AND", '$'
 _100 dd 100.0
 _200 dd 200.0
 _300 dd 300.0
+_25 dd 25.0
+@aux197 dd ?
+_SEG_IF db "SEG_IF", '$'
 
 .CODE
 
@@ -316,6 +326,38 @@ fstp berta
 DisplayFloat berta,1
 newLine
 
+fld _1_2
+fld _1_8
+fadd
+fstp @aux110
+fld @aux110
+fld _0_4555
+fadd
+fstp @aux112
+fld berta
+fld @aux112
+fxch
+fcomp
+fstsw ax
+sahf
+JNE etiqueta_116
+
+JMP etiqueta_120
+
+etiqueta_116:
+fld e
+fld _1_1
+fxch
+fcomp
+fstsw ax
+sahf
+JNA etiqueta_121
+
+etiqueta_120:
+DisplayString _ENTRA_POR_ACA,1
+newLine
+
+etiqueta_121:
 DisplayString _FIN_FILTER_3,1
 newLine
 
@@ -331,7 +373,7 @@ fxch
 fcomp
 fstsw ax
 sahf
-JNA etiqueta_122
+JNA etiqueta_136
 
 fld e
 fld _3_3
@@ -339,20 +381,20 @@ fxch
 fcomp
 fstsw ax
 sahf
-JA etiqueta_122
+JA etiqueta_136
 
 fld e
 fstp @Filter4
-JMP etiqueta_135
+JMP etiqueta_149
 
-etiqueta_122:
+etiqueta_136:
 fld b
 fld _3_0
 fxch
 fcomp
 fstsw ax
 sahf
-JNA etiqueta_128
+JNA etiqueta_142
 
 fld b
 fld _3_3
@@ -360,20 +402,20 @@ fxch
 fcomp
 fstsw ax
 sahf
-JA etiqueta_128
+JA etiqueta_142
 
 fld b
 fstp @Filter4
-JMP etiqueta_135
+JMP etiqueta_149
 
-etiqueta_128:
+etiqueta_142:
 fld cont
 fld _3_0
 fxch
 fcomp
 fstsw ax
 sahf
-JNA etiqueta_134
+JNA etiqueta_148
 
 fld cont
 fld _3_3
@@ -381,16 +423,16 @@ fxch
 fcomp
 fstsw ax
 sahf
-JA etiqueta_134
+JA etiqueta_148
 
 fld cont
 fstp @Filter4
-JMP etiqueta_135
+JMP etiqueta_149
 
-etiqueta_134:
+etiqueta_148:
 fld _0
 fstp @Filter4
-etiqueta_135:
+etiqueta_149:
 fld @Filter4
 fstp berta
 DisplayFloat berta,1
@@ -401,12 +443,12 @@ newLine
 
 fld _5
 fstp a
-etiqueta_141:
+etiqueta_155:
 fld a
 fld _1
 fadd
-fstp @aux143
-fld @aux143
+fstp @aux157
+fld @aux157
 fstp a
 DisplayFloat a,1
 newLine
@@ -417,7 +459,7 @@ fxch
 fcomp
 fstsw ax
 sahf
-JNE etiqueta_141
+JNE etiqueta_155
 
 fld c
 fld _10
@@ -425,30 +467,30 @@ fxch
 fcomp
 fstsw ax
 sahf
-JAE etiqueta_155
+JAE etiqueta_169
 
 DisplayFloat c,1
 newLine
 
-etiqueta_155:
+etiqueta_169:
 fld c
 fld _10
 fxch
 fcomp
 fstsw ax
 sahf
-JA etiqueta_161
+JA etiqueta_175
 
 DisplayString _hola,1
 newLine
 
-JMP etiqueta_162
+JMP etiqueta_176
 
-etiqueta_161:
+etiqueta_175:
 DisplayString _chau,1
 newLine
 
-etiqueta_162:
+etiqueta_176:
 DisplayString _cadenuski,1
 newLine
 
@@ -458,7 +500,7 @@ fxch
 fcomp
 fstsw ax
 sahf
-JAE etiqueta_172
+JAE etiqueta_186
 
 fld q
 fld _20
@@ -466,18 +508,46 @@ fxch
 fcomp
 fstsw ax
 sahf
-JNA etiqueta_172
+JNA etiqueta_186
 
 DisplayString _CONDICION_AND,1
 newLine
 
-etiqueta_172:
+etiqueta_186:
 fld _100
 fstp q
 fld _200
 fstp c
 fld _300
 fstp d
+fld q
+fld _50
+fxch
+fcomp
+fstsw ax
+sahf
+JNE etiqueta_194
+
+JMP etiqueta_200
+
+etiqueta_194:
+fld _25
+fld _4
+fmul
+fstp @aux197
+fld q
+fld @aux197
+fxch
+fcomp
+fstsw ax
+sahf
+JNAE etiqueta_201
+
+etiqueta_200:
+DisplayString _SEG_IF,1
+newLine
+
+etiqueta_201:
 DisplayFloat q,1
 newLine
 

@@ -38,11 +38,18 @@ _7.11                         CTE_REAL            7.11                          
 @Filter2                      REAL                                              0    
 _FIN_FILTER_2                 CTE_STRING          FIN_FILTER_2                  12   
 @Filter3                      REAL                                              0    
+_1.2                          CTE_REAL            1.2                           0    
+_1.8                          CTE_REAL            1.8                           0    
+@aux110                                                                         0    
+_0.4555                       CTE_REAL            0.4555                        0    
+@aux112                                                                         0    
+_1.1                          CTE_REAL            1.1                           0    
+_ENTRA_POR_ACA                CTE_STRING          ENTRA_POR_ACA                 13   
 _FIN_FILTER_3                 CTE_STRING          FIN_FILTER_3                  12   
 _3.3                          CTE_REAL            3.3                           0    
 @Filter4                      REAL                                              0    
 _FIN_FILTER_4                 CTE_STRING          FIN_FILTER_4                  12   
-@aux143                                                                         0    
+@aux157                                                                         0    
 _10                           CTE_INT             10                            0    
 _hola                         CTE_STRING          hola                          4    
 _chau                         CTE_STRING          chau                          4    
@@ -52,3 +59,6 @@ _CONDICION_AND                CTE_STRING          CONDICION_AND                 
 _100                          CTE_INT             100                           0    
 _200                          CTE_INT             200                           0    
 _300                          CTE_INT             300                           0    
+_25                           CTE_INT             25                            0    
+@aux197                                                                         0    
+_SEG_IF                       CTE_STRING          SEG_IF                        6    

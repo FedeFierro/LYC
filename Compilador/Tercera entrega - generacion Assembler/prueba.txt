@@ -58,6 +58,10 @@ cont:=7.115;
 berta:=FILTER(NOT(_==1.3323) ,[e,cont,b]);
 PRINT berta
 
+IF(berta == (1.2 + 1.8 +0.4555) OR e > 1.1)
+	PRINT "ENTRA_POR_ACA"
+ENDIF
+
 PRINT "FIN_FILTER_3"
 
 e:=1.3323;
@@ -92,6 +96,11 @@ PRINT "CONDICION_AND"
 ENDIF
 
 [q,c,d]:=[100,200,300]				--/ ASIGNACION MULTIPLE /--
+
+IF(q==50 OR q >= (25*4))
+PRINT "SEG_IF"
+ENDIF
+
 PRINT q
 PRINT c
 PRINT d
