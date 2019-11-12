@@ -77,7 +77,6 @@
 	int esSalto();
 	void replace_char(char* str, char find, char replace);
 
-
 	int cantidadTokens = 0;
 	int i=0; 
 	int j=0;
@@ -106,6 +105,8 @@
 	
 	int yylex();
 	int yyerror();
+	
+	#define DEBUG		0
 
 	/* --------------- VECTOR OPERACION -------------- */
 
@@ -115,12 +116,10 @@
 		int tipoNumerico;
 	} operacion;
 
-	operacion vector_operacion[100];
+	operacion vector_operacion[1000];
 	int cantOperaciones=0;
 
 	/* --------------- TERCETOS -------------- */
-
-#define DEBUG		0
 
 	typedef struct terceto {
 		int nroTerceto;
@@ -131,7 +130,7 @@
 		int esEtiqueta;
 	}	terceto;
 
-	terceto  vector_tercetos[200]; 		// vector de tercetos
+	terceto  vector_tercetos[1000]; 		// vector de tercetos
 	int indice_terceto = 0;	   			// Cantidad de elementos e indice de tercetos
 
 	int F_ind=0;
@@ -161,7 +160,7 @@
 	char tipoCondicion1[10];
 	char tipoCondicion2[10];
 
-	/* ---- FUNCIONES FILTER -------------*/
+	/* --------------- FUNCIONES FILTER --------------- */
 
 	void invertir_salto(terceto* vector, int indice);
 	void crear_tercetos_filter();
@@ -258,7 +257,7 @@ lista_definiciones: lista_definiciones definicion {	printf("lista_definiciones -
 | definicion {	printf("lista_definiciones -> definicion OK\n\n");}
 
 definicion: CORCHETE_ABIERTO lista_tipo_dato CORCHETE_CERRADO DOS_PUNTOS CORCHETE_ABIERTO lista_ids CORCHETE_CERRADO 
-{ acomodarPunterosTS(); 
+{ 	acomodarPunterosTS(); 
 	printf("definicion OK\n\n");
 }
 
@@ -266,29 +265,34 @@ lista_tipo_dato: lista_tipo_dato COMA tipo_dato	{ printf("lista_tipo_dato -> lis
 | tipo_dato {printf("lista_tipo_dato -> tipo_dato OK \n\n");}
 
 tipo_dato: 
-TIPO_ENTERO { 
+TIPO_ENTERO 
+{ 
 	guardarTipo("ENTERO");
 	guardarEnVectorTablaSimbolos(1,tipoVariableActual);
 	printf("TIPO_ENTERO en tipo_variable OK\n\n");
 }
-| TIPO_REAL {
+| TIPO_REAL 
+{
 	guardarTipo("REAL");
 	guardarEnVectorTablaSimbolos(1,tipoVariableActual);
 	printf("TIPO_REAL en tipo_variable OK\n\n");
 }
-| TIPO_CADENA{
+| TIPO_CADENA
+{
 	guardarTipo("CADENA");
 	guardarEnVectorTablaSimbolos(1,tipoVariableActual);
 	printf("TIPO_CADENA en tipo_variable OK\n\n");
 }
 
 lista_ids: 
-lista_ids COMA ID {
+lista_ids COMA ID 
+{
 	printf("%s\n", yylval.str_val);
 	guardarEnVectorTablaSimbolos(2,yylval.str_val);
 	printf("lista_ids -> lista_ids , ID OK\n\n");
 }
-| ID {
+| ID 
+{
 	printf("%s\n", yylval.str_val);
 	guardarEnVectorTablaSimbolos(2,yylval.str_val);
 	printf("lista_ids -> ID OK\n\n");
@@ -304,7 +308,8 @@ sentencia : asignacion 	{printf("sentencia -> asignacion OK \n\n");}
 | entrada_datos			{printf("sentencia -> entrada_datos OK \n\n");}
 | salida_datos			{printf("sentencia -> salida_datos OK \n\n");}
 
-entrada_datos: READ ID 	{ 
+entrada_datos: READ ID 	
+{ 
 	strcpy(idAux,yylval.str_val);	 
 	if(strcmp(validaTipo(idAux),idAux)!=0)				// verifico contra la TS si la variable existe
 	{
@@ -317,7 +322,8 @@ entrada_datos: READ ID 	{
 	}
 }
 
-salida_datos: PRINT CADENA { 
+salida_datos: PRINT CADENA 
+{ 
 	strcpy(idAux,yylval.str_val);
 	agregarConstante(yylval.str_val,CteString,constanteString);
 	
@@ -342,7 +348,8 @@ salida_datos: PRINT CADENA {
 	}
 }
 
-bloque_iteracion: REPEAT {
+bloque_iteracion: REPEAT 
+{
 	apilar(&pilaRepeat,indice_terceto);
 	auxRepeat=indice_terceto;
 	
@@ -387,7 +394,8 @@ expresion:  expresion OPERACION_SUMA termino
 		strcpy(vector_tercetos[E_ind].resultado_aux,bufferaux1);	// guardo junto al terceto
 		agregarAuxAssembler(bufferaux1);							// agrego a TS
 		
-	}else
+	}
+	else
 	{	sprintf(mensajeDeError, "Incompatibilidad de tipos de variables en la suma\n");
 		mostrarError(mensajeDeError);
 	}
@@ -444,7 +452,8 @@ termino: termino OPERACION_MULTIPLICACION factor
 		strcat(bufferaux1,bufferaux2);								// creo la variable aux de assembler
 		strcpy(vector_tercetos[T_ind].resultado_aux,bufferaux1);	// guardo junto al terceto
 		agregarAuxAssembler(bufferaux1);							// agrego a TS
-	} else
+	} 
+	else
 	{
 		sprintf(mensajeDeError, "Incompatibilidad de tipos de variables en la multiplicacion\n");
 		mostrarError(mensajeDeError);
@@ -488,9 +497,9 @@ factor: ID  {
 	strcpy(vector_operacion[cantOperaciones].id,yylval.str_val);
 	strcpy(vector_operacion[cantOperaciones].tipo,validaTipo(yylval.str_val));
 	vector_operacion[cantOperaciones].tipoNumerico = aux_tiponumerico;
-	printf("ID %s\n",vector_operacion[cantOperaciones].id);
-	printf("TIPO %s\n",vector_operacion[cantOperaciones].tipo);
-	printf("TIPO_NUMERICO %d\n",vector_operacion[cantOperaciones].tipoNumerico);
+	//printf("ID %s\n",vector_operacion[cantOperaciones].id);
+	//printf("TIPO %s\n",vector_operacion[cantOperaciones].tipo);
+	//printf("TIPO_NUMERICO %d\n",vector_operacion[cantOperaciones].tipoNumerico);
 	apilar(&pilaOperacion,cantOperaciones);
 	cantOperaciones++;
 	F_ind = crear_terceto(yylval.str_val,"_","_");
@@ -507,8 +516,8 @@ factor: ID  {
 	strcpy(vector_operacion[cantOperaciones].id,constanteAux);
 	strcpy(vector_operacion[cantOperaciones].tipo,"ENTERO");
 	vector_operacion[cantOperaciones].tipoNumerico = 4;
-	printf("ID %s\n",vector_operacion[cantOperaciones].id);
-	printf("TIPO %s\n",vector_operacion[cantOperaciones].tipo);
+	//printf("ID %s\n",vector_operacion[cantOperaciones].id);
+	//printf("TIPO %s\n",vector_operacion[cantOperaciones].tipo);
 	apilar(&pilaOperacion,cantOperaciones);
 	cantOperaciones++;
 	F_ind = crear_terceto(constanteAux,"_","_");
@@ -524,8 +533,8 @@ factor: ID  {
 	strcpy(vector_operacion[cantOperaciones].id,constanteAux);
 	strcpy(vector_operacion[cantOperaciones].tipo,"REAL");
 	vector_operacion[cantOperaciones].tipoNumerico = 5;
-	printf("ID %s\n",vector_operacion[cantOperaciones].id);
-	printf("TIPO %s\n",vector_operacion[cantOperaciones].tipo);
+	//printf("ID %s\n",vector_operacion[cantOperaciones].id);
+	//printf("TIPO %s\n",vector_operacion[cantOperaciones].tipo);
 	apilar(&pilaOperacion,cantOperaciones);
 	cantOperaciones++;
 	
@@ -533,7 +542,8 @@ factor: ID  {
 	F_ind = crear_terceto(constanteAux,"_","_");
 	apilar(&pilaFactor,F_ind);
 }
-|CADENA {
+|CADENA 
+{
 
 	agregarConstante(yylval.str_val,CteString,constanteString);
 	strcpy(constanteAux,"_");
@@ -698,7 +708,6 @@ condicion:   PARENTESIS_ABIERTO comparacion PARENTESIS_CERRADO
 }
 | PARENTESIS_ABIERTO OPERADOR_NOT PARENTESIS_ABIERTO comparacion PARENTESIS_CERRADO PARENTESIS_CERRADO 
 {
-
 	invertir_salto(vector_tercetos, aux);
 	aux=desapilar(&pilaRepeat);
 	itoa(aux,bufferaux1,10);							// desapilo y pongo donde voy si la primer condicion es falsa
@@ -873,7 +882,7 @@ condicion_filter: comparacion_filter{
 	vector_filter[1] = vector_condicion_filter[1];
 
 } OPERADOR_OR comparacion_filter { 
-	printf("Aqui\n");
+	//printf("Aqui\n");
 	vector_filter[2] = vector_condicion_filter[0];
 	vector_filter[3] = vector_condicion_filter[1];
 	int aux = desapilar(&pilaOperacion);
@@ -1053,8 +1062,8 @@ factor_numerico: ID {
 	printf("factor numerico -> ID OK\n\n");
 	strcpy(vector_operacion[cantOperaciones].id,yylval.str_val);
 	strcpy(vector_operacion[cantOperaciones].tipo,validaTipo(yylval.str_val));
-	printf("ID %s\n",vector_operacion[cantOperaciones].id);
-	printf("TIPO %s\n",vector_operacion[cantOperaciones].tipo);
+	//printf("ID %s\n",vector_operacion[cantOperaciones].id);
+	//printf("TIPO %s\n",vector_operacion[cantOperaciones].tipo);
 	apilar(&pilaOperacion,cantOperaciones);
 	cantOperaciones++;
 	F_ind = crear_terceto(yylval.str_val,"_","_");
@@ -1067,8 +1076,8 @@ factor_numerico: ID {
 	strcpy(constanteAux + strlen(constanteAux), "\0");
 	strcpy(vector_operacion[cantOperaciones].id,constanteAux);
 	strcpy(vector_operacion[cantOperaciones].tipo,"ENTERO");
-	printf("ID %s\n",vector_operacion[cantOperaciones].id);
-	printf("TIPO %s\n",vector_operacion[cantOperaciones].tipo);
+	//printf("ID %s\n",vector_operacion[cantOperaciones].id);
+	//printf("TIPO %s\n",vector_operacion[cantOperaciones].tipo);
 	apilar(&pilaOperacion,cantOperaciones);
 	cantOperaciones++;
 	F_ind = crear_terceto(constanteAux,"_","_");
@@ -1082,8 +1091,8 @@ factor_numerico: ID {
 	strcpy(constanteAux + strlen(constanteAux), "\0");
 	strcpy(vector_operacion[cantOperaciones].id,constanteAux);
 	strcpy(vector_operacion[cantOperaciones].tipo,"REAL");
-	printf("ID %s\n",vector_operacion[cantOperaciones].id);
-	printf("TIPO %s\n",vector_operacion[cantOperaciones].tipo);
+	//printf("ID %s\n",vector_operacion[cantOperaciones].id);
+	//printf("TIPO %s\n",vector_operacion[cantOperaciones].tipo);
 	apilar(&pilaOperacion,cantOperaciones);
 	cantOperaciones++;
 	replace_char(constanteAux,'.','_');
@@ -1098,13 +1107,13 @@ factor_numerico: ID {
 
 lista_ids_filter: 
 lista_ids_filter COMA ID {
-	printf("%s\n", yylval.str_val);
+	//printf("%s\n", yylval.str_val);
 	guardarEnVectorTablaSimbolos(2,yylval.str_val);
 	printf("lista_ids -> lista_ids , ID OK\n\n");
 	crear_tercetos_filter();
 }
 | ID {
-	printf("%s\n", yylval.str_val);
+	//printf("%s\n", yylval.str_val);
 	guardarEnVectorTablaSimbolos(2,yylval.str_val);
 	printf("lista_ids -> ID OK\n\n");
 	crear_tercetos_filter();
@@ -1118,12 +1127,14 @@ asignacion_multiple: CORCHETE_ABIERTO lista_ids_asignMultiple CORCHETE_CERRADO O
 lista_ids_asignMultiple: 
 lista_ids_asignMultiple COMA ID {
 
-	printf("%s\n", yylval.str_val);
+	//printf("%s\n", yylval.str_val);
 	printf("lista_ids_asignMultiple -> lista_ids_asignMultiple , ID OK\n\n");
 	if(strcmp(yylval.str_val,validaTipo(yylval.str_val))==0){
 		//No existe en tabla de simbolo
 		printf("No existe en tabla de simbolo \n\n");
-	}else{
+	}
+	else
+	{
 
 		strcpy(vector_asig_multiple[indice_asign_multiple].nombre,yylval.str_val);
 		strcpy(vector_asig_multiple[indice_asign_multiple].tipo,validaTipo(yylval.str_val));
@@ -1133,13 +1144,15 @@ lista_ids_asignMultiple COMA ID {
 }
 
 | ID {
-	printf("%s\n", yylval.str_val);
+	//printf("%s\n", yylval.str_val);
 	printf("lista_ids_asignMultiple -> ID OK\n\n");
 
 	if(strcmp(yylval.str_val,validaTipo(yylval.str_val))==0){
 		//No existe en tabla de simbolos
 		printf("No existe en tabla de simbolo \n\n");
-	}else{
+	}
+	else
+	{
 
 		strcpy(vector_asig_multiple[indice_asign_multiple].nombre,yylval.str_val);
 		strcpy(vector_asig_multiple[indice_asign_multiple].tipo,validaTipo(yylval.str_val));
@@ -1152,11 +1165,11 @@ lista_expresiones_asignMultiple : lista_expresiones_asignMultiple COMA expresion
 | expresion_asignMultiple
 
 expresion_asignMultiple: termino_asignMultiple	{
-	printf("expresion_asignMultiple -> term OK \n\n");
+	printf("expresion_asignMultiple -> termino_asignMultiple OK \n\n");
 }
 
 termino_asignMultiple: factor_asignMultiple{
-	printf("term -> factor_asignMultiple OK \n\n");
+	printf("termino_asignMultiple -> factor_asignMultiple OK \n\n");
 }
 
 factor_asignMultiple: ID 
@@ -1166,7 +1179,6 @@ factor_asignMultiple: ID
 
 	if(indice_expresiones_asign_multiple < indice_asign_multiple)
 	{
-
 		if(strcmp(vector_asig_multiple[indice_expresiones_asign_multiple].tipo,"ENTERO") == 0)
 		{	
 			agregarConstante(yylval.str_val,CteInt,constanteEntera);
@@ -1175,8 +1187,9 @@ factor_asignMultiple: ID
 			strcpy(constanteAux + strlen(constanteAux), "\0");
 			crear_terceto("=",vector_asig_multiple[indice_expresiones_asign_multiple].nombre,constanteAux);
 			indice_expresiones_asign_multiple++;
-		}else{
-
+		}
+		else
+		{
 			sprintf(mensajeDeError, "La Variable: %s No es de tipo entero.\n", vector_asig_multiple[indice_expresiones_asign_multiple].nombre);
 			mostrarError(mensajeDeError);
 
@@ -1185,11 +1198,11 @@ factor_asignMultiple: ID
 	}
 
 }
-| REAL {
+| REAL 
+{
 	printf("factor_asignMultiple -> Cte_Real OK\n\n");
 	if(indice_expresiones_asign_multiple < indice_asign_multiple)
 	{
-
 		if(strcmp(vector_asig_multiple[indice_expresiones_asign_multiple].tipo,"REAL") == 0)
 		{	
 			agregarConstante(yylval.str_val,CteReal,constanteFloat);
@@ -1198,8 +1211,9 @@ factor_asignMultiple: ID
 			strcpy(constanteAux + strlen(constanteAux), "\0");
 			crear_terceto("=",vector_asig_multiple[indice_expresiones_asign_multiple].nombre,constanteAux);
 			indice_expresiones_asign_multiple++;
-		}else{
-
+		}
+		else
+		{
 			sprintf(mensajeDeError, "La Variable: %s No es de tipo real.\n", vector_asig_multiple[indice_expresiones_asign_multiple].nombre);
 			mostrarError(mensajeDeError);
 		}
@@ -1229,10 +1243,11 @@ int main(int argc,char *argv[]){
 		yyparse();
 
 		guardarTabla();					// archivos de tabla de simbolos
-		escribe_arch_tercetos();		// archivo del codigo intermedio
+		escribe_arch_tercetos();		// archivo del codigo intermedio -> tercetos
 		prepararAssembler();			// arreglo el vector_tercetos
-		escribirAssembler();			// archivo del codigo assembler
+		escribirAssembler();			// escribo archivo del codigo assembler
 	}
+	
 	fclose(yyin);
 	return 0;
 }
@@ -1254,7 +1269,9 @@ void guardarEnVectorTablaSimbolos(int opc, char * cad){								// si mando 1 gua
 			strcpy(tablaDeSimbolos[pos_td].tipo,cad);
 			cant_tipo_dato++;
 			pos_td++;
-		}else{
+		}
+		else
+		{
 			strcpy(tablaDeSimbolos[pos_cv].nombre,cad);
 			pos_cv++;
 			cant_variables++;
@@ -1281,7 +1298,9 @@ void acomodarPunterosTS(){
 				diferencia--;
 				indice++;
 			}
-		}else{
+		}
+		else
+		{
 			min=pos_cv;
 			cant_elementos=min;
 			pos_td=pos_cv=min;
@@ -1294,7 +1313,9 @@ void acomodarPunterosTS(){
 				indice++;
 			}
 		}
-	}else{
+	}
+	else
+	{
 		cant_elementos=pos_cv;
 		cant_tipo_dato=cant_variables=0;
 	}
@@ -1310,7 +1331,9 @@ void quitarDuplicados(){
 					strcpy(tablaDeSimbolos[j].nombre, "@");				// doy de baja a todos los proximos que son iguales
 				}
 			}
-		}else{
+		}
+		else
+		{
 			j=i+1;
 			while(j<cant_elementos && strcmp(tablaDeSimbolos[j].tipo,"@")==0)
 			j++;
@@ -1318,7 +1341,9 @@ void quitarDuplicados(){
 				strcpy(tablaDeSimbolos[i].nombre,tablaDeSimbolos[j].nombre);
 				strcpy(tablaDeSimbolos[i].tipo,tablaDeSimbolos[j].tipo);
 				i--;
-			}else{
+			}
+			else
+			{
 				i=cant_elementos;
 			}
 
@@ -1341,12 +1366,13 @@ void guardarTabla(){
 
 	fprintf(arch,"%-30s%-20s%-30s%-5s\n","NOMBRE","TIPO","VALOR", "LONGITUD");
 	fprintf(arch, "======================================================================================================\n");
+	
 	// Recorro la tabla
 	int i = 0;
 	while (i < cant_ctes) {
 
 		fprintf(arch, "%-30s%-20s%-30s%-5d\n", &(tablaDeSimbolos[i].nombre), &(tablaDeSimbolos[i].tipo) , &(tablaDeSimbolos[i].valor), tablaDeSimbolos[i].longitud);
-		printf("%-30s%-20s%-30s%-5d%\n", &(tablaDeSimbolos[i].nombre), &(tablaDeSimbolos[i].tipo) , &(tablaDeSimbolos[i].valor), tablaDeSimbolos[i].TipodeDato_numerico);
+		//printf("%-30s%-20s%-30s%-5d%\n", &(tablaDeSimbolos[i].nombre), &(tablaDeSimbolos[i].tipo) , &(tablaDeSimbolos[i].valor), tablaDeSimbolos[i].TipodeDato_numerico);
 		i++;
 	}
 
@@ -1429,22 +1455,6 @@ void escribe_arch_tercetos()
 	for(i = 0; i < indice_terceto; i++)
 	{	
 		aux =  vector_tercetos[i];
-		/*
-		if((strcmp(aux.te1,"_")==0 && strcmp(aux.te2,"_")==0) || (strcmp(aux.ope,"READ")==0 || strcmp(aux.ope,"PRINT")==0))					// si el primer y segundo operando es un guion bajo , grabo como esta
-		fprintf(arch, "[%d] (%s,%s,%s)\n", aux.nroTerceto, aux.ope,aux.te1, aux.te2 );
-		else
-		{	if(strcmp(aux.te2,"_")==0)					// si el segundo operando es un guion bajo, es un terceto JMP
-			fprintf(arch, "[%d] (%s,[%s],%s)\n", aux.nroTerceto, aux.ope,aux.te1, aux.te2 );
-			else
-			{
-				if(*aux.te1>='a' && *aux.te1<='z')			// si el primer operando son una letra, puede que sea una asignacion de una cadena, grabo como esta
-				fprintf(arch, "[%d] (%s,%s,[%s])\n", aux.nroTerceto, aux.ope,aux.te1, aux.te2 );
-				else
-				fprintf(arch, "[%d] (%s,[%s],[%s])\n", aux.nroTerceto, aux.ope,aux.te1, aux.te2 );				// sino, los dos operandos son otros tercetos, pongo corchetes a los dos
-			}
-
-		}
-		*/
 		fprintf(arch, "[%d] (%s,%s,%s)\n", aux.nroTerceto, aux.ope,aux.te1, aux.te2 );
 		
 	}
@@ -1525,7 +1535,8 @@ void crear_tercetos_filter(){
 				if(condicion_filter_doble==1 && condicion_filter_or ==0){
 					itoa(indice_terceto+5, bufferaux1,10);
 				}
-				else{
+				else
+				{
 					itoa(indice_terceto+3, bufferaux1,10);
 				}
 				crear_terceto(aux.ope,bufferaux1,"_");
@@ -1539,7 +1550,9 @@ void crear_tercetos_filter(){
 		crear_terceto("=",nombreFilter,yylval.str_val);
 		cont_filter++;
 		apilar(&pilaFilter,crear_terceto("JMP","","_"));
-	}else{
+	}
+	else
+	{
 		sprintf(mensajeDeError, "Incompatibilidad de tipos de la variable:%s con la comparacion del filter\n",yylval.str_val );
 		mostrarError(mensajeDeError);
 
@@ -1665,19 +1678,19 @@ void prepararAssembler()
 	char etiqueta[20] = "etiqueta_";
 	int entero_aux;
 	
-	printf("ANTES: \n\n");
+	/*printf("ANTES: \n\n");
 	for(i=0;i<indice_terceto;i++)
 	{
 		printf("%-5s%-5s%-5s%-5s%-5d%\n",vector_tercetos[i].ope,vector_tercetos[i].te1,vector_tercetos[i].te2,vector_tercetos[i].resultado_aux,vector_tercetos[i].esEtiqueta);
-	}
+	}*/
 
 	for(i=0;i<indice_terceto;i++)
 	{
 		
 		if(strcmp(vector_tercetos[i].te1,"_")==0 && strcmp(vector_tercetos[i].te2,"_")==0 && vector_tercetos[i].esEtiqueta!=99 )
 		{
-			printf("ESTOY EN _ , _ : %d\n",i);
-			printf("OPE: %s - TE1: %s - TE2: %s\n",vector_tercetos[i].ope,vector_tercetos[i].te1,vector_tercetos[i].te2);
+			//printf("ESTOY EN _ , _ : %d\n",i);
+			//printf("OPE: %s - TE1: %s - TE2: %s\n",vector_tercetos[i].ope,vector_tercetos[i].te1,vector_tercetos[i].te2);
 			for(j=i+1;j< indice_terceto;j++)
 			{
 				itoa(i,bufferaux1,10);
@@ -1694,7 +1707,7 @@ void prepararAssembler()
 		
 		if(strcmp(vector_tercetos[i].te1,"_")==0 && strcmp(vector_tercetos[i].te2,"_")==0 && vector_tercetos[i].esEtiqueta==99 )
 		{
-			printf("ETIQUETA + TERCETO _ _\n");
+			//printf("ETIQUETA + TERCETO _ _\n");
 			j=i+1;
 			itoa(i,bufferaux1,10);
 			while(strcmp(vector_tercetos[j].te1,bufferaux1)!=0 && strcmp(vector_tercetos[j].te2,bufferaux1)!=0)
@@ -1708,7 +1721,7 @@ void prepararAssembler()
 		
 		if(esOperacion(i))
 		{
-			printf("ESTOY EN esOperacion : %d\n",i);
+			//printf("ESTOY EN esOperacion : %d\n",i);
 			for(j=i+1;j< indice_terceto;j++)
 			{	
 				itoa(i,bufferaux1,10);
@@ -1728,24 +1741,24 @@ void prepararAssembler()
 		
 		if(esSalto(i))
 		{	
-			printf("OPE: %s - TE1: %s - TE2: %s\n",vector_tercetos[i].ope,vector_tercetos[i].te1,vector_tercetos[i].te2);
+			//printf("OPE: %s - TE1: %s - TE2: %s\n",vector_tercetos[i].ope,vector_tercetos[i].te1,vector_tercetos[i].te2);
 			entero_aux = atoi(vector_tercetos[i].te1);
-			printf("entero_aux: %d\n",entero_aux);
+			//printf("entero_aux: %d\n",entero_aux);
 			vector_tercetos[entero_aux].esEtiqueta = 99;
 			strcat(etiqueta,vector_tercetos[i].te1);
-			printf("ETIQUETA: %s\n",etiqueta);
+			//printf("ETIQUETA: %s\n",etiqueta);
 			strcpy(vector_tercetos[i].te1,etiqueta);
-			printf("vector_tercetos[%d].te1: %s\n",i,vector_tercetos[i].te1);
+			//printf("vector_tercetos[%d].te1: %s\n",i,vector_tercetos[i].te1);
 			strcpy(etiqueta,"etiqueta_");
 		}
 		
 	}
 	
-	printf("DESPUES: \n\n");
+	/*printf("DESPUES: \n\n");
 	for(i=0;i<indice_terceto;i++)
 	{
 		printf("%-5s%-5s%-5s%-5s%-5d%\n",vector_tercetos[i].ope,vector_tercetos[i].te1,vector_tercetos[i].te2,vector_tercetos[i].resultado_aux,vector_tercetos[i].esEtiqueta);
-	}
+	}*/
 }
 
 void procesarCodigoIntermedio()
@@ -1757,7 +1770,7 @@ void procesarCodigoIntermedio()
 		{
 			fprintf(archivoAssembler,"etiqueta_%d:\n",i);		
 		}
-	
+		
 		switch(esOperacion(i))
 		{
 		case 1:
@@ -1806,7 +1819,7 @@ void procesarCodigoIntermedio()
 			fprintf(archivoAssembler,"LEA EAX, %s\n MOV %s , EAX\n", vector_tercetos[i].te2, vector_tercetos[i].te1);
 			break;
 			
-			case 11:
+		case 11:
 			fprintf(archivoAssembler,"DisplayFloat %s,3\nnewLine\n\n", vector_tercetos[i].te1);
 			break;
 			
@@ -1932,9 +1945,9 @@ void escribirFinal(){
 }
 
 void replace_char(char* str, char find, char replace){
-    char *current_pos = strchr(str,find);
-    while (current_pos){
-        *current_pos = replace;
-        current_pos = strchr(current_pos,find);
-    }
+	char *current_pos = strchr(str,find);
+	while (current_pos){
+		*current_pos = replace;
+		current_pos = strchr(current_pos,find);
+	}
 }
